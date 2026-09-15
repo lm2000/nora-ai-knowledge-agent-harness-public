@@ -54,7 +54,9 @@ Evaluate source fidelity, conflicting feedback, missing material and useful comp
 
 The role runs in its own container (`role-interview`) containing Coordination and the Deep Agent, with shared Retrieval MCP and PostgreSQL checkpoints. Runtime configuration is in `src/nora/roles.py`. [D172](../Decisions.md#per-role-runtime-containers-checkpoint-ownership-and-automatic-provider-routing) records the implementation status.
 
-## Proposed package layout
+## Future package layout
+
+**Design only — not implemented.** No per-role packages exist today; role runtimes are built by the shared construction in `src/nora/roles.py`, and this document holds each role's purpose inline. When a future role grows real per-role code (own entrypoint, tools and eval fixtures), it would adopt the following structure:
 
 ```text
 agents/<role>/
@@ -66,7 +68,7 @@ agents/<role>/
   evals/             fixtures and evaluation criteria
 ```
 
-The layout is a design. Implement an entrypoint, dependencies and meaningful tests together. Add connectors, skills or delegation only when the role requires them.
+The layout is a design, not a current contract. Implement an entrypoint, dependencies and meaningful tests together if and when a role is split out. Add connectors, skills or delegation only when the role requires them.
 
 ## Shared contract
 
