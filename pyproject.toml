@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nora-knowledge"
+version = "0.1.0"
+description = "A self-hosted knowledge assistant with shared MCP retrieval"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE", "NOTICE.md", "architecture/diagrams/Excalifont-LICENSE.txt"]
+dependencies = ["numpy==2.5.2", "qdrant-client==1.19.0"]
+
+[project.optional-dependencies]
+server = [
+  "deepagents==0.7.13", "langchain==1.4.0", "langchain-core==1.6.3",
+  "langchain-ollama==1.1.0", "langchain-openai==0.3.34", "langgraph-checkpoint-postgres==3.1.2",
+  "psycopg[binary,pool]==3.3.5", "mcp==2.1.1", "ag-ui-langgraph==0.0.44",
+  "fastapi==0.138.0", "uvicorn==0.52.4", "httpx==0.28.1",
+]
+embeddings = ["torch==2.6.0", "transformers==5.16.0"]
+gcs = ["google-cloud-storage==3.13.1"]
+conversion = ["docling==2.126.0"]
+dev = ["pytest==9.0.3", "pytest-asyncio==1.4.0", "ruff==0.16.7", "build==1.6.1", "setuptools==84.0.0", "wheel==0.48.0"]
+
+[project.scripts]
+nora = "nora.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "setup/google-cloud/tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

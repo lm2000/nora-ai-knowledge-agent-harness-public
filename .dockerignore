@@ -1,0 +1,27 @@
+# Default deny; include only what each image target needs.
+*
+!pyproject.toml
+!requirements.lock
+!README.md
+!LICENSE
+!NOTICE.md
+!architecture/
+architecture/*
+!architecture/diagrams/
+architecture/diagrams/*
+!architecture/diagrams/Excalifont-LICENSE.txt
+!src/
+!src/**
+!deploy/
+!deploy/**
+!ui/
+!ui/**
+!scripts/
+!scripts/**
+!tests/
+!tests/**
+**/node_modules
+**/.next
+**/__pycache__
+**/*.pyc
+**/*.tsbuildinfo

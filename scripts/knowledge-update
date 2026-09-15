@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# Host-side launcher for the four manual ingestion job containers.
+# Usage: scripts/knowledge-update <source-dir> [<releases-root> [<collection>]]
+set -euo pipefail
+
+SOURCE=${1:-}
+RELEASES_ROOT=${2:-.runtime/releases}
+COLLECTION=${3:-}
+
+if [[ -z "$SOURCE" ]]; then
+  echo "Usage: $0 <source-dir> [<releases-root> [<collection>]]" >&2
+  exit 2
+fi
+
+if [[ ! -d "$SOURCE" ]]; then
+  echo "Source is not a directory: $SOURCE" >&2
+  exit 2
+fi
+
+mkdir -p "$RELEASES_ROOT"
+SOURCE=$(cd "$SOURCE" && pwd)
+RELEASES_ROOT=$(cd "$RELEASES_ROOT" && pwd)
+RELEASE_ID=$(date -u +%Y%m%d_%H%M%S_%N)_$(openssl rand -hex 4)
+COLLECTION="${3:-${NORA_COLLECTION:-nora_prepared_bge_v1}_${RELEASE_ID}}"
+PROJECT="${NORA_COMPOSE_PROJECT:-nora-ingestion-e2e}"
+RELEASE_DIR="/data/$RELEASE_ID/prepared"
+EXTRACTED_DIR="/data/$RELEASE_ID/extracted"
+HOST_RELEASE_DIR="$RELEASES_ROOT/$RELEASE_ID"
+
+RUN_EXTRA=(-v "$RELEASES_ROOT:/data")
+if [[ -n "${NORA_ACCEPTANCE_TOKENIZER_DOUBLE:-}" ]]; then
+  RUN_EXTRA+=("-e" "NORA_ACCEPTANCE_TOKENIZER_DOUBLE=1")
+fi
+
+GCS_MODE=""
+if [[ -n "${NORA_GCS_POINTER:-}" ]]; then
+  GCS_MODE=1
+  : "${NORA_GCS_BUCKET:?GCS mode requires NORA_GCS_BUCKET}"
+  : "${NORA_GCS_PREFIX:?GCS mode requires NORA_GCS_PREFIX}"
+  if [[ -z "${NORA_GCS_PUBLISHER_CREDENTIALS_FILE:-}" && -z "${NORA_GCS_PUBLISHER_SERVICE_ACCOUNT:-}" ]]; then
+    echo "GCS mode requires NORA_GCS_PUBLISHER_CREDENTIALS_FILE or NORA_GCS_PUBLISHER_SERVICE_ACCOUNT" >&2
+    exit 2
+  fi
+  if [[ -n "${NORA_GCS_PUBLISHER_CREDENTIALS_FILE:-}" && ! -f "$NORA_GCS_PUBLISHER_CREDENTIALS_FILE" ]]; then
+    echo "Publisher credentials file not found: $NORA_GCS_PUBLISHER_CREDENTIALS_FILE" >&2
+    exit 2
+  fi
+  python3 - "$NORA_GCS_BUCKET" "$NORA_GCS_POINTER" <<'PY_POINTER_PREFLIGHT'
+import sys
+from urllib.parse import urlparse
+pointer = urlparse(sys.argv[2])
+if pointer.scheme != "gs" or pointer.netloc != sys.argv[1] or not pointer.path.strip("/"):
+    raise SystemExit("GCS pointer must name an object in NORA_GCS_BUCKET")
+PY_POINTER_PREFLIGHT
+  if [[ -n "${NORA_GCS_PUBLISHER_CREDENTIALS_FILE:-}" ]]; then
+    python3 - "$NORA_GCS_PUBLISHER_CREDENTIALS_FILE" <<'PY_PREFLIGHT'
+import json, sys
+with open(sys.argv[1]) as stream:
+    credentials = json.load(stream)
+if credentials.get("type") == "service_account" or "private_key" in credentials:
+    raise SystemExit("Use a keyless publisher ADC configuration, not a service-account key")
+PY_PREFLIGHT
+  fi
+fi
+
+echo "Starting ingestion run $RELEASE_ID for project $PROJECT"
+echo "Source: $SOURCE"
+echo "Release root: $RELEASES_ROOT"
+
+export COMPOSE_PROJECT_NAME="$PROJECT"
+COMPOSE_FILES="${NORA_COMPOSE_FILES:-}"
+# Build compose command as an array so project names and paths keep their quoting.
+COMPOSE_ARGS=(docker compose)
+if [[ -n "$COMPOSE_FILES" ]]; then
+  # shellcheck disable=SC2206
+  COMPOSE_ARGS+=($COMPOSE_FILES)
+fi
+COMPOSE_ARGS+=(--profile ingestion -p "$PROJECT")
+
+die() {
+  echo "Ingestion failed at stage: $1" >&2
+  echo "Release directory retained for inspection: $HOST_RELEASE_DIR" >&2
+  exit 1
+}
+
+echo "Stage 1/4: Docling conversion"
+"${COMPOSE_ARGS[@]}" run --rm "${RUN_EXTRA[@]}" -v "$SOURCE:/source:ro" job-convert /source "$EXTRACTED_DIR" || die "convert"
+[[ -f "$HOST_RELEASE_DIR/extracted/manifest.json" ]] || die "convert manifest missing"
+
+echo "Stage 2/4: Deterministic preparation"
+"${COMPOSE_ARGS[@]}" run --rm "${RUN_EXTRA[@]}" job-prepare "$EXTRACTED_DIR" "$RELEASE_DIR" || die "prepare"
+[[ -f "$HOST_RELEASE_DIR/prepared/coverage.json" ]] || die "prepare coverage missing"
+
+echo "Stage 3/4: Batch embedding"
+if [[ -n "$COLLECTION" ]]; then
+  "${COMPOSE_ARGS[@]}" run --rm "${RUN_EXTRA[@]}" job-embed "$RELEASE_DIR" --collection "$COLLECTION" || die "embed"
+else
+  "${COMPOSE_ARGS[@]}" run --rm "${RUN_EXTRA[@]}" job-embed "$RELEASE_DIR" || die "embed"
+fi
+[[ -f "$HOST_RELEASE_DIR/prepared/job-embed.json" ]] || die "embed job report missing"
+
+echo "Stage 4/4: Index import and verify"
+"${COMPOSE_ARGS[@]}" run --rm "${RUN_EXTRA[@]}" job-import "$RELEASE_DIR" || die "import"
+[[ -f "$HOST_RELEASE_DIR/prepared/job-import.json" ]] || die "import job report missing"
+
+if [[ -n "$GCS_MODE" ]]; then
+  echo "Publishing and activating the verified GCS release"
+  PUBLISHER_CONTAINER_PATH="/run/secrets/gcs-publisher"
+  PUBLISH_ARGS=()
+  if [[ -n "${NORA_GCS_PUBLISHER_CREDENTIALS_FILE:-}" ]]; then
+    PUBLISH_ARGS+=("-e" "NORA_GCS_PUBLISHER_CREDENTIALS_FILE=$PUBLISHER_CONTAINER_PATH")
+    PUBLISH_ARGS+=("-v" "$NORA_GCS_PUBLISHER_CREDENTIALS_FILE:$PUBLISHER_CONTAINER_PATH:ro")
+  fi
+  if [[ -n "${NORA_GCS_PUBLISHER_SERVICE_ACCOUNT:-}" ]]; then
+    PUBLISH_ARGS+=("-e" "NORA_GCS_PUBLISHER_SERVICE_ACCOUNT=$NORA_GCS_PUBLISHER_SERVICE_ACCOUNT")
+  fi
+  "${COMPOSE_ARGS[@]}" run --rm "${RUN_EXTRA[@]}" "${PUBLISH_ARGS[@]}" \
+    admin \
+    activate \
+      --gcs-pointer "$NORA_GCS_POINTER" \
+      --gcs-bucket "$NORA_GCS_BUCKET" \
+      --gcs-prefix "$NORA_GCS_PREFIX" \
+      /data "/data/$RELEASE_ID/prepared" || die "activate"
+  echo "Cloud activation complete: $HOST_RELEASE_DIR/prepared"
+  printf '{"release": "%s", "activated": true, "pointer": "%s"}\n' \
+    "$HOST_RELEASE_DIR/prepared" "$NORA_GCS_POINTER"
+else
+  echo "Activating release $RELEASE_ID"
+  # Use a relative target so the symlink stays valid when the releases root is
+  # bind-mounted at a different host path inside a container. Use Python's atomic
+  # os.replace so the operation is portable between Linux and macOS (plain mv on
+  # macOS follows a symlink-to-directory destination instead of replacing it).
+  TMP_LINK="$RELEASES_ROOT/current.tmp.$$"
+  ln -sfn "$RELEASE_ID/prepared" "$TMP_LINK"
+  python3 -c "import os, sys; os.replace(sys.argv[1], sys.argv[2])" "$TMP_LINK" "$RELEASES_ROOT/current"
+
+  echo "Activation complete: $HOST_RELEASE_DIR/prepared"
+  printf '{"release": "%s", "activated": true}\n' "$HOST_RELEASE_DIR/prepared"
+  echo "$RELEASE_ID/prepared" >> "$RELEASES_ROOT/.history"
+fi

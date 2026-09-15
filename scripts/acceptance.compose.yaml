@@ -1,0 +1,41 @@
+# Acceptance override: replaces the production BGE service with a deterministic double
+# and binds retrieval and the ingestion job services to a task-local releases path.
+# Use with compose.yaml and a unique Compose project name; does not start or create
+# unrelated services.
+name: nora
+
+x-acceptance-volumes: &acceptance-volumes
+  - "${NORA_ACCEPTANCE_RELEASES:-./.runtime/releases}:/data"
+  - "./.runtime/models:/models:ro"
+
+services:
+  bge:
+    image: ${NORA_ACCEPTANCE_IMAGE:-nora-acceptance:local}
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.acceptance
+      args:
+        NORA_BACKEND_IMAGE: ${NORA_BACKEND_IMAGE:-nora-backend:local}
+    command: [python, /app/scripts/serve_bge_double.py]
+    healthcheck:
+      test: [CMD, python, /app/health.py, bge]
+      interval: 5s
+      timeout: 8s
+      start_period: 30s
+      retries: 8
+
+  retrieval:
+    ports: ["127.0.0.1:${NORA_ACCEPTANCE_PORT:-8001}:8001"]
+    volumes: *acceptance-volumes
+
+  job-convert:
+    volumes: *acceptance-volumes
+
+  job-prepare:
+    volumes: *acceptance-volumes
+
+  job-embed:
+    volumes: *acceptance-volumes
+
+  job-import:
+    volumes: *acceptance-volumes

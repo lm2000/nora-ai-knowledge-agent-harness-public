@@ -1,0 +1,303 @@
+name: nora
+
+x-backend: &backend
+  image: ${NORA_BACKEND_IMAGE:-nora-backend:local}
+  build:
+    context: .
+    dockerfile: deploy/Dockerfile
+  user: "${NORA_UID:-1000}:${NORA_GID:-1000}"
+  init: true
+  environment: &backend-env
+    NORA_DATA_DIR: /data/current
+    NORA_RELEASES_ROOT: /data
+    NORA_STATE_DIR: /state
+    NORA_MODEL_PATH: /models/bge
+    NORA_COLLECTION: ${NORA_COLLECTION:-nora_prepared_bge_v1}
+    NORA_QDRANT_URL: http://qdrant:6333
+    NORA_QDRANT_KEY_FILE: /run/secrets/qdrant
+    NORA_BGE_URL: http://bge:8002
+    NORA_BGE_TOKEN_FILE: /run/secrets/bge
+  volumes:
+    - ./.runtime/releases:/data
+    - ./.runtime/models:/models:ro
+  secrets: [qdrant, bge]
+
+services:
+  postgres:
+    image: postgres:17.9-bookworm@sha256:47f917f7409eacd22fc5dfb1dee634e1b55cf0c01d1a7eb701be2227a03e0641
+    entrypoint: [sh, /opt/nora/postgres-entrypoint.sh]
+    command: [postgres]
+    environment:
+      POSTGRES_USER: nora
+      POSTGRES_DB: nora
+    secrets: [postgres]
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./deploy/postgres-entrypoint.sh:/opt/nora/postgres-entrypoint.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U nora -d nora']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:v1.19.1@sha256:12364fe851b9f17356fc88189fc06d1b521262e04659ec7345975b00c9246a10
+    entrypoint: [sh, /opt/nora/qdrant-entrypoint.sh]
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+    secrets: [qdrant]
+    volumes:
+      - qdrant:/qdrant/storage
+      - ./deploy/qdrant-entrypoint.sh:/opt/nora/qdrant-entrypoint.sh:ro
+      - ./deploy/qdrant-health.sh:/opt/nora/qdrant-health.sh:ro
+    healthcheck:
+      test: [CMD, bash, /opt/nora/qdrant-health.sh]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  bge:
+    <<: *backend
+    command: [serve, bge, --host, 0.0.0.0]
+    environment:
+      <<: *backend-env
+      NORA_BGE_TOKEN_FILE: /run/secrets/bge
+    secrets: [bge]
+    healthcheck:
+      test: [CMD, python, /app/health.py, bge]
+      interval: 15s
+      timeout: 8s
+      start_period: 90s
+      retries: 8
+    restart: unless-stopped
+
+  retrieval:
+    <<: *backend
+    command: [serve, retrieval, --host, 0.0.0.0]
+    environment:
+      <<: *backend-env
+      NORA_MCP_TOKEN_FILE: /run/secrets/mcp
+      NORA_MCP_ALLOWED_HOSTS: ${NORA_MCP_ALLOWED_HOSTS:-localhost:*,127.0.0.1:*,retrieval:*}
+      NORA_GCS_POINTER: "${NORA_GCS_POINTER:-}"
+      NORA_GCS_PROJECT: "${NORA_GCS_PROJECT:-}"
+    secrets: [qdrant, mcp, bge]
+    depends_on:
+      qdrant: {condition: service_healthy}
+      bge: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, /app/health.py, retrieval]
+      interval: 15s
+      timeout: 8s
+      start_period: 90s
+      retries: 8
+    restart: unless-stopped
+
+  coordination:
+    <<: *backend
+    command: [serve, role, --host, 0.0.0.0, --role, knowledge]
+    volumes:
+      - ./.runtime/state:/state
+    environment:
+      <<: *backend-env
+      NORA_ROLE: knowledge
+      NORA_KNOWLEDGE_MODELS: ${NORA_KNOWLEDGE_MODELS:-}
+      NORA_SELECTOR_COST_WEIGHT: ${NORA_SELECTOR_COST_WEIGHT:-1.0}
+      NORA_SELECTOR_LATENCY_WEIGHT: ${NORA_SELECTOR_LATENCY_WEIGHT:-1.0}
+      NORA_FIREWORKS_URL: ${NORA_FIREWORKS_URL:-https://api.fireworks.ai/inference/v1}
+      NORA_FIREWORKS_MODEL: ${NORA_FIREWORKS_MODEL:-accounts/fireworks/models/kimi-k3}
+      NORA_POSTGRES_HOST: postgres
+      NORA_POSTGRES_USER: nora
+      NORA_POSTGRES_DB: nora
+      NORA_POSTGRES_PASSWORD_FILE: /run/secrets/postgres
+      NORA_RETRIEVAL_URL: http://retrieval:8001/mcp
+      NORA_MCP_TOKEN_FILE: /run/secrets/mcp
+      NORA_INTERNAL_TOKEN_FILE: /run/secrets/internal
+      NORA_OLLAMA_TOKEN_FILE: /run/secrets/ollama
+      NORA_OLLAMA_URL: ${NORA_OLLAMA_URL:-https://ollama.com}
+      NORA_OLLAMA_MODEL: ${NORA_OLLAMA_MODEL:-gpt-oss:20b}
+      NORA_FIREWORKS_TOKEN_FILE: /run/secrets/fireworks
+      NORA_DAILY_LIMIT: ${NORA_DAILY_LIMIT:-60}
+      NORA_REQUEST_TIMEOUT: ${NORA_REQUEST_TIMEOUT:-180}
+    secrets: [postgres, mcp, internal, ollama, fireworks, bge]
+    depends_on:
+      postgres: {condition: service_healthy}
+      retrieval: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, /app/health.py, role]
+      interval: 15s
+      timeout: 8s
+      retries: 8
+    restart: unless-stopped
+
+  role-research:
+    <<: *backend
+    command: [serve, role, --host, 0.0.0.0, --role, research]
+    volumes:
+      - ./.runtime/state:/state
+    environment:
+      <<: *backend-env
+      NORA_ROLE: research
+      NORA_RESEARCH_MODELS: ${NORA_RESEARCH_MODELS:-}
+      NORA_SELECTOR_COST_WEIGHT: ${NORA_SELECTOR_COST_WEIGHT:-1.0}
+      NORA_SELECTOR_LATENCY_WEIGHT: ${NORA_SELECTOR_LATENCY_WEIGHT:-1.0}
+      NORA_FIREWORKS_URL: ${NORA_FIREWORKS_URL:-https://api.fireworks.ai/inference/v1}
+      NORA_FIREWORKS_MODEL: ${NORA_FIREWORKS_MODEL:-accounts/fireworks/models/kimi-k3}
+      NORA_POSTGRES_HOST: postgres
+      NORA_POSTGRES_USER: nora
+      NORA_POSTGRES_DB: nora
+      NORA_POSTGRES_PASSWORD_FILE: /run/secrets/postgres
+      NORA_RETRIEVAL_URL: http://retrieval:8001/mcp
+      NORA_MCP_TOKEN_FILE: /run/secrets/mcp
+      NORA_INTERNAL_TOKEN_FILE: /run/secrets/internal
+      NORA_OLLAMA_TOKEN_FILE: /run/secrets/ollama
+      NORA_OLLAMA_URL: ${NORA_OLLAMA_URL:-https://ollama.com}
+      NORA_OLLAMA_MODEL: ${NORA_OLLAMA_MODEL:-gpt-oss:20b}
+      NORA_FIREWORKS_TOKEN_FILE: /run/secrets/fireworks
+      NORA_DAILY_LIMIT: ${NORA_DAILY_LIMIT:-60}
+      NORA_REQUEST_TIMEOUT: ${NORA_REQUEST_TIMEOUT:-180}
+    secrets: [postgres, mcp, internal, ollama, fireworks, bge]
+    depends_on:
+      postgres: {condition: service_healthy}
+      retrieval: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, /app/health.py, role]
+      interval: 15s
+      timeout: 8s
+      retries: 8
+
+  role-interview:
+    <<: *backend
+    command: [serve, role, --host, 0.0.0.0, --role, interview]
+    volumes:
+      - ./.runtime/state:/state
+    environment:
+      <<: *backend-env
+      NORA_ROLE: interview
+      NORA_INTERVIEW_MODELS: ${NORA_INTERVIEW_MODELS:-}
+      NORA_SELECTOR_COST_WEIGHT: ${NORA_SELECTOR_COST_WEIGHT:-1.0}
+      NORA_SELECTOR_LATENCY_WEIGHT: ${NORA_SELECTOR_LATENCY_WEIGHT:-1.0}
+      NORA_FIREWORKS_URL: ${NORA_FIREWORKS_URL:-https://api.fireworks.ai/inference/v1}
+      NORA_FIREWORKS_MODEL: ${NORA_FIREWORKS_MODEL:-accounts/fireworks/models/kimi-k3}
+      NORA_POSTGRES_HOST: postgres
+      NORA_POSTGRES_USER: nora
+      NORA_POSTGRES_DB: nora
+      NORA_POSTGRES_PASSWORD_FILE: /run/secrets/postgres
+      NORA_RETRIEVAL_URL: http://retrieval:8001/mcp
+      NORA_MCP_TOKEN_FILE: /run/secrets/mcp
+      NORA_INTERNAL_TOKEN_FILE: /run/secrets/internal
+      NORA_OLLAMA_TOKEN_FILE: /run/secrets/ollama
+      NORA_OLLAMA_URL: ${NORA_OLLAMA_URL:-https://ollama.com}
+      NORA_OLLAMA_MODEL: ${NORA_OLLAMA_MODEL:-gpt-oss:20b}
+      NORA_FIREWORKS_TOKEN_FILE: /run/secrets/fireworks
+      NORA_DAILY_LIMIT: ${NORA_DAILY_LIMIT:-60}
+      NORA_REQUEST_TIMEOUT: ${NORA_REQUEST_TIMEOUT:-180}
+    secrets: [postgres, mcp, internal, ollama, fireworks, bge]
+    depends_on:
+      postgres: {condition: service_healthy}
+      retrieval: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, /app/health.py, role]
+      interval: 15s
+      timeout: 8s
+      retries: 8
+
+  ui:
+    image: ${NORA_UI_IMAGE:-nora-ui:local}
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    user: "${NORA_UID:-1000}:${NORA_GID:-1000}"
+    init: true
+    environment:
+      NORA_KNOWLEDGE_URL: http://coordination:8000
+      NORA_RESEARCH_URL: http://role-research:8003
+      NORA_INTERVIEW_URL: http://role-interview:8004
+      NORA_INTERNAL_TOKEN_FILE: /run/secrets/internal
+      NORA_UI_ALLOWED_ORIGINS: ${NORA_UI_ALLOWED_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      NEXT_TELEMETRY_DISABLED: "1"
+      COPILITKIT_TELEMETRY_DISABLED: "true"
+    secrets: [internal]
+    ports: ["127.0.0.1:8080:3000"]
+    depends_on:
+      coordination: {condition: service_healthy}
+      role-research: {condition: service_healthy}
+      role-interview: {condition: service_healthy}
+    restart: unless-stopped
+
+  job-convert:
+    profiles: [ingestion]
+    image: ${NORA_CONVERSION_IMAGE:-nora-conversion:local}
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: conversion
+    user: "${NORA_UID:-1000}:${NORA_GID:-1000}"
+    init: true
+    environment: *backend-env
+    volumes:
+      - ./.runtime/releases:/data
+      - ./.runtime/models:/models:ro
+    secrets: [qdrant, bge]
+    entrypoint: [nora, job, convert]
+    command: []
+
+  job-prepare:
+    <<: *backend
+    profiles: [ingestion]
+    entrypoint: [nora, job, prepare]
+    command: []
+    depends_on:
+      bge: {condition: service_healthy}
+
+  job-embed:
+    <<: *backend
+    profiles: [ingestion]
+    entrypoint: [nora, job, embed]
+    command: []
+    depends_on:
+      qdrant: {condition: service_healthy}
+      bge: {condition: service_healthy}
+
+  job-import:
+    <<: *backend
+    profiles: [ingestion]
+    entrypoint: [nora, job, import]
+    command: []
+    depends_on:
+      qdrant: {condition: service_healthy}
+      bge: {condition: service_healthy}
+
+  admin:
+    <<: *backend
+    profiles: [admin]
+    environment:
+      <<: *backend-env
+      NORA_GCS_POINTER: "${NORA_GCS_POINTER:-}"
+      NORA_GCS_PROJECT: "${NORA_GCS_PROJECT:-}"
+      NORA_GCS_PUBLISHER_SERVICE_ACCOUNT: "${NORA_GCS_PUBLISHER_SERVICE_ACCOUNT:-}"
+    command: [verify, /data/current]
+    depends_on:
+      qdrant: {condition: service_healthy}
+
+  ollama:
+    image: ollama/ollama:0.18.2@sha256:5a5d014aa774f78ebe1340c0d4afc2e35afc12a2c3b34c84e71f78ea20af4ba3
+    profiles: [local-model]
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
+secrets:
+  postgres: {file: ./.runtime/secrets/postgres}
+  qdrant: {file: ./.runtime/secrets/qdrant}
+  mcp: {file: ./.runtime/secrets/mcp}
+  internal: {file: ./.runtime/secrets/internal}
+  ollama: {file: ./.runtime/secrets/ollama}
+  fireworks: {file: ./.runtime/secrets/fireworks}
+  bge: {file: ./.runtime/secrets/bge}
+
+volumes:
+  postgres:
+  qdrant:
+  ollama:

@@ -1,0 +1,26 @@
+{
+  "name": "nora-ui",
+  "private": true,
+  "scripts": {
+    "build": "COPILOTKIT_TELEMETRY_DISABLED=true next build",
+    "start": "COPILOTKIT_TELEMETRY_DISABLED=true next start",
+    "dev": "COPILOTKIT_TELEMETRY_DISABLED=true next dev -p 3000",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.2.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "@copilotkit/react-core": "1.70.1",
+    "@copilotkit/runtime": "1.70.1"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.20.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7"
+  },
+  "version": "0.1.0",
+  "type": "module"
+}

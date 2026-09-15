@@ -1,0 +1,89 @@
+# macOS and editor state
+.DS_Store
+.obsidian/
+.smart-env/
+.claudian/
+.firecrawl/
+
+# Python environments and caches
+**/.venv/
+**/venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.py[cod]
+
+# JavaScript dependencies and build output
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+
+# Local configuration and credentials
+**/.env
+**/*.env
+**/config.env
+**/.cli-*.json
+**/*.pem
+**/*.key
+
+# Private corpus, derived vectors, and generated runtime state
+categorization/runs/
+setup/private-deployment/runtime/
+setup/private-deployment/evidence/
+setup/private-deployment/pricing-page.html
+setup/private-deployment/alternate-response.json
+evaluation/**/qdrant-data/
+evaluation/**/*vectors*.npz
+evaluation/**/*vectors*.npy
+evaluation/**/*chunks*.jsonl
+evaluation/targeted-research-pilot/input.zip
+evaluation/targeted-research-pilot/documents.json
+evaluation/targeted-research-pilot/retrieval.json
+evaluation/targeted-research-pilot/query-response.json
+evaluation/targeted-research-pilot/improvement/variants.json
+evaluation/**/provider-response.json
+evaluation/**/code-response.txt
+categorization/cloud_run_text_cleanup/evidence/sample-input.zip
+
+# Provider and evaluator execution traces; curated summaries remain tracked
+reviews/**/jobs/
+**/*.log
+
+# Raw Cloud Run execution dumps (large machine receipts); small curated
+# verification files in the same folder remain tracked
+categorization/cloud_run_text_cleanup/evidence/tasks-progress.json
+categorization/cloud_run_text_cleanup/evidence/full-task-statuses.json
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# OpenClaw agent persona (workspace-local, not product docs)
+IDENTITY.md
+SOUL.md
+USER.md
+
+# OpenClaw dreaming/recall runtime state (workspace-local, not product docs)
+DREAMS.md
+memory/
+
+# Ignore Smart Environment folder
+.smart-env
+
+# Private documentation history and local documentation previews
+.private/
+.public-docs/
+
+# Generated operator-specific cloud plans
+setup/google-cloud/plan-output/*.txt
+
+# Local application state, package metadata and release artifacts
+.runtime/
+.release/
+*.egg-info/
+**/*.egg-info/
+**/*.tsbuildinfo
+.verification/

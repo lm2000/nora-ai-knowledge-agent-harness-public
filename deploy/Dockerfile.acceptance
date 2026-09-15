@@ -1,0 +1,9 @@
+# Acceptance harness image: extends the production backend image with deterministic doubles.
+ARG NORA_BACKEND_IMAGE=nora-backend:local
+FROM ${NORA_BACKEND_IMAGE}
+COPY scripts /app/scripts
+COPY tests /app/tests
+WORKDIR /app
+# Reset the production entrypoint so compose can run arbitrary Python harness commands.
+ENTRYPOINT []
+CMD []
