@@ -1,28 +1,17 @@
-# Optional model routing
+# Model selection
 
-[Setup](README.md) · [Coordination](containers/coordination.md) · [Roadmap](../Plan.md)
+[Setup](README.md) · [Coordination](containers/coordination.md) · [Configuration](configuration.md#model-routing)
 
-The [shared adapter](../src/nora/routing.py) chooses between two Ollama-compatible models using question length and English complexity keywords. For example, a short factual question may use the cheaper model while a comparison uses the stronger model. Routing is disabled by default and has no measured quality parity.
+The NIS assistant selects among configured tool-capable Ollama Cloud and Fireworks.ai models. For example, a comparison can require a higher quality tier than a simple saved-fact question. Selection meets the required quality tier first, then compares configured cost and latency assumptions.
 
-## Settings
+## Configuration
 
-| Variable | Meaning |
-| --- | --- |
-| `NORA_ROUTER_ENABLED` | Enable explicitly with `true` |
-| `NORA_ROUTER_CHEAP_MODEL` | Required model name when routing is enabled |
-| `NORA_ROUTER_CHEAP_URL` | Optional endpoint; defaults to the main Ollama URL |
-| `NORA_ROUTER_CHEAP_TOKEN` or `_FILE` | Optional separate credential |
-| `NORA_ROUTER_THRESHOLD` | Nonnegative score threshold; default 40 |
-| `NORA_ROUTER_LOG` | Optional local JSONL decision log |
+`NORA_ASSISTANT_MODELS` is a JSON array overriding the built-in model inventory. Endpoint/model defaults use `NORA_OLLAMA_*` and `NORA_FIREWORKS_*`. `NORA_SELECTOR_COST_WEIGHT` and `NORA_SELECTOR_LATENCY_WEIGHT` tune relative weights; `NORA_SELECTOR_LOG` optionally records decisions.
 
-The stronger model uses normal `NORA_OLLAMA_*` settings. A primary credential is reused only when endpoint URLs match; it is not forwarded to a different cheap endpoint. Add these variables explicitly to the Coordination environment when using Compose.
+Candidates lacking configured credentials are skipped without logging secret values. If no capability-matched candidate survives, the selector uses the viable inventory. A request fails when no credentialed candidate remains. A provider failure may use one fallback only before any streaming output; a partial response does not restart as another answer.
 
-## Behavior and tests
+## Limits and evidence
 
-The adapter uses public LangChain invocation, tool-binding and streaming interfaces. It preserves message histories and tool calls. A provider failure can try the other tier once before any stream output; after partial output it raises instead of starting another answer. A logging failure never triggers another model request.
+Quality, cost and latency scores are conservative configuration assumptions, not measured parity or savings. Logs contain query hashes and routing outcomes rather than raw questions. The three-retrieval/four-logical-model-call bounds remain independent of provider retries.
 
-Decision records include a query hash, tier, score, threshold, fallback, outcome and latency. They do not measure actual token usage or cost. Coordination's model retry can add inference attempts, so a daily request count is not a model-call budget.
-
-[Contract tests](../tests/test_routing.py) cover sync/async calls, tool binding, failures, partial streams and credential separation. These are deterministic doubles. Compare real models on reviewed retrieval and answer fixtures before choosing a threshold or claiming savings.
-
-The old standalone router and boolean quality-parity helper were retired with their original evidence. No judge or quality gate is implemented here. LiteLLM and RouteLLM remain [technology candidates](../architecture/Technology%20Options.md).
+Deterministic adapter tests establish tool binding, invocation, streaming and error behavior. Representative answer quality and provider cost/latency still require reviewed fixtures and measurements. LiteLLM serves as the MCP gateway; its built-in inference router is not selected. The obsolete keyword/length router is removed from the supported assistant path.

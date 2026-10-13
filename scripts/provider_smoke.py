@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded live-provider smoke test for the role-runtime adapters.
+"""Bounded live-provider smoke test for the assistant provider adapters.
 
 Uses harmless synthetic prompts. Requires one configured provider token:
   - NORA_OLLAMA_TOKEN + NORA_OLLAMA_URL for Ollama Cloud

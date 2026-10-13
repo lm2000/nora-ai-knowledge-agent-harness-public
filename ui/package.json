@@ -1,6 +1,7 @@
 {
   "name": "nora-ui",
   "private": true,
+  "packageManager": "pnpm@12.8.1",
   "scripts": {
     "build": "COPILOTKIT_TELEMETRY_DISABLED=true next build",
     "start": "COPILOTKIT_TELEMETRY_DISABLED=true next start",

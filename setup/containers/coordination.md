@@ -1,38 +1,31 @@
-# Coordination
+# Coordination and the NIS assistant
 
-[Services](README.md) · [Knowledge Assistant](../../agents/README.md#knowledge-assistant)
+[Services](README.md) · [Assistant behavior](../../agents/README.md)
 
-Coordination turns a question and retrieved passages into an answer. For example, “Which of those risks affects the deadline?” continues the same saved thread and performs another knowledge search.
+Coordination owns the conversation: it selects an answer model, runs the OSS Deep Agent and persists history. For example, a question about Atlas and its UUID follow-up use the same assistant and checkpoints, regardless of client transport.
 
-## Selected target: one runtime per role
+## Selected one-assistant target — 2026-10-02
 
-Each enabled role has its own container containing Coordination and the Deep Agent. Execution, model/tool calls and conversation lifecycle stay together; there is no separate outer coordinator. All roles use shared Retrieval MCP and PostgreSQL. Each role runtime performs automatic balanced routing across the configured inference providers (Ollama Cloud and Fireworks.ai). BGE stays behind Retrieval for conversational knowledge queries.
+FastMCP is embedded in the existing FastAPI process. `ask_nis(question, thread_id=None)` returns a plain answer and conversation UUID. Omitting the UUID starts a new topic; supplying it continues that assistant conversation. LiteLLM runs as a separate gateway to the same tool. HTTP and MCP invoke the same operation in process, and their lifespans share startup/shutdown.
 
-The existing `coordination` service serves the Knowledge Assistant role directly; Research and Interview runtimes are implemented with their own system prompts and model inventories. UI role routing, per-role configuration, PostgreSQL checkpoint namespacing and a global thread ownership table are implemented. A shared PostgreSQL database namespaces checkpoints; the ownership table additionally rejects the same client-visible thread id being reused across roles. See [role status](../../agents/README.md) and [the target inventory](README.md#selected-target).
+The dated private candidate has direct/gateway transport, normal-restart continuity and bounded Codex/OpenClaw conversational evidence. [Deployment status](../private-deployment/STATUS.md) owns those results and remaining quality gaps. MCP streaming, extra tools and other gateway integrations remain future work.
 
-[Conversation sequence](../../architecture/diagrams/02-question-to-answer.excalidraw.md) · [SVG preview](../../architecture/diagrams/02-question-to-answer.svg).
+## Interfaces and state
 
-## Current request path
+Run `nora serve coordination --host 0.0.0.0` in the backend container. `/ask` accepts `question` and an optional UUID `thread_id`; `/history/{thread_id}` returns that assistant's history; `/agent` supplies AG-UI. Role-selection fields, role-specific history and `/transfer` are removed.
 
-1. Accept an authenticated `/ask` request or an AG-UI `/agent` stream.
-2. Reserve the process execution slot and atomically count the accepted request before streaming headers.
-3. Search Retrieval MCP for the latest user question.
-4. Run the Deep Agent with a bounded model view, search/read tools and the configured Ollama model.
-5. Store checkpoints and return plain answer content. `/history/{thread_id}` returns user and assistant messages.
+Public thread identifiers remain UUIDs. PostgreSQL checkpoints use `assistant:<UUID>` internally. There is no fallback to raw legacy checkpoints. The existing ownership table rejects IDs belonging to old roles while retaining their stored records. No old-chat migration or destructive schema change is part of this cleanup.
 
-[Agent construction](../../src/nora/agent.py), [HTTP adapters](../../src/nora/coordination.py) and [MCP client](../../src/nora/mcp_client.py) are shared across targets. Filesystem, shell and delegation tools are excluded. Manual ingestion is separate.
+[Configuration](../configuration.md) owns model inventory, credentials, endpoints and request limits. `NORA_ASSISTANT_MODELS` configures the incumbent selector. Shared Retrieval MCP pins the prepared release for a turn; BGE stays behind Retrieval for knowledge queries.
 
-[Configuration](../configuration.md#request-bounds) owns timeouts, history and request limits. The official async PostgreSQL checkpointer is used in production; framework tests use an in-memory checkpointer and an in-memory ownership store. Request accounting is atomic, but execution concurrency is local to one process. Each role runtime has its own semaphore.
+## Execution bounds
 
-The `coordination` (Knowledge), `role-research` and `role-interview` runtimes each perform automatic quality-first model routing across their configured inventory (Ollama Cloud and Fireworks.ai). Tool binding and fallback-once-before-stream contracts are tested with doubles. The legacy optional keyword router remains available for the backward-compatible `coordination` path. Eight real PostgreSQL ownership/restart checks and live text/auth smoke calls through Ollama Cloud and Fireworks passed for the candidate. Live tool/stream behavior and target-host resource costs/latencies have not been measured.
+The default turn allows three retrieval calls including initial Grounding, and four logical model calls. Provider retry/output-token limits remain unchanged. The graph-step bound permits middleware bookkeeping after a final answer. One explicit numeric word-cap repair may run without tools within the same model allowance; it does not truncate or loop. Failed or still-oversized repairs return an error. Streaming can expose drafts, so capped streaming presentation is not accepted merely because the final saved answer complies.
 
+The official async PostgreSQL checkpointer initializes its schema at startup. Request accounting is atomic; execution concurrency is local to one Coordination process. A normal restart reconnects to the same database and retains assistant history.
 
-## Deployment, migration and rollback
+## Packaging and secrets
 
-- **Secret-file interfaces.** Each Coordination/role runtime reads `NORA_INTERNAL_TOKEN_FILE`, `NORA_POSTGRES_PASSWORD_FILE`, `NORA_MCP_TOKEN_FILE` and optional provider files (`NORA_OLLAMA_TOKEN_FILE`, `NORA_FIREWORKS_TOKEN_FILE`). `nora init` creates these files under `.runtime/secrets`; Compose mounts them via `secrets:` and never embeds values in environment variables.
-- **Health and readiness.** `deploy/health.py` calls `/health` on the service with the internal token. The endpoint returns 503 while Retrieval is not ready and 200 when Retrieval reports ready. Compose `healthcheck` uses this script; the UI waits for the three role services to be healthy.
-- **Migration and rollback preserving old chats.** Activation changes the `current` release symlink or GCS pointer; conversation checkpoints are stored separately in PostgreSQL and are unaffected by release activation/rollback. The ownership table is created by each role runtime at startup if it does not exist. Rollback restores the previous release pointer; old chats remain readable through their role runtime.
-- **Application downgrade.** Downgrade to an older single-role application has not been exercised. Preserve the PostgreSQL volume; Research/Interview histories require a role-aware application. Corpus-pointer rollback is separate from application rollback.
-- **Startup and restart.** Each role runtime initializes the Postgres checkpointer schema and the ownership table on startup. A restart reconnects to the same PostgreSQL database and resumes existing conversations; ownership claims persist because they live in PostgreSQL. Run one Coordination/role worker per role for the current ownership model.
-- **Timeouts and concurrency.** `NORA_REQUEST_TIMEOUT` bounds the whole answer turn, `NORA_TOOL_TIMEOUT` bounds Retrieval MCP calls, and `NORA_DAILY_LIMIT` plus `NORA_CONCURRENCY` throttle accepted requests locally. The selector passes the request timeout to each provider model.
-- **Resource observations.** No real resource measurements were taken in this sandbox; CPU, memory and latency observations must be recorded on the target host under load.
+Coordination uses the shared backend image while owning its own process and state mounts. Compose mounts internal/MCP credentials, PostgreSQL password and configured provider credentials as secret files. `nora init` creates local owner-only files; values do not belong in source or logs.
+
+Conversation checkpoints are independent from ingestion state and corpus activation. Back up PostgreSQL, Qdrant, prepared documents and configuration before deployment changes. [Operations reference](../private-deployment/ROLLOUT.md#operate-and-recover) and the canonical maintainer guide own host-specific procedures.

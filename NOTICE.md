@@ -26,4 +26,4 @@ SOFTWARE.
 
 ## Diagram font
 
-The README SVG previews embed Excalifont, Copyright (c) 2024 by Excalidraw. The font is distributed under the [SIL Open Font License 1.1](architecture/diagrams/Excalifont-LICENSE.txt), retained separately from Nora's MIT license. [Upstream font metadata and license](https://github.com/excalidraw/excalidraw/blob/master/packages/excalidraw/fonts/Excalifont/index.ts).
+The retired README SVG previews embedded Excalifont, Copyright (c) 2024 by Excalidraw. Their attribution is retained; the current HTML/GIF views use system fonts. The font is distributed under the [SIL Open Font License 1.1](architecture/diagrams/Excalifont-LICENSE.txt), retained separately from Nora's MIT license. [Upstream font metadata and license](https://github.com/excalidraw/excalidraw/blob/master/packages/excalidraw/fonts/Excalifont/index.ts).

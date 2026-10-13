@@ -1,77 +1,68 @@
-# Nora — Knowledge & Agent Harness
+# Nora Intelligence System — Knowledge & Agent Harness
 
-Nora is an experimental, self-hosted knowledge assistant. It searches a prepared document collection, answers questions through a Deep Agent, and saves conversations so they can continue across sessions.
+Nora is a private, self-hosted knowledge assistant. It retrieves relevant passages from a prepared document collection, answers through a Deep Agent, and keeps conversation history in PostgreSQL.
 
-**Example:** “What still blocks the Atlas release?” The included fictional project notes say that a load test and a rollback rehearsal remain. Nora retrieves those passages before answering or asking for clarification.
+**Example:** ask “What still blocks the Atlas release?” Nora finds the fictional Atlas plan and decisions, then answers that the load test and rollback rehearsal remain.
 
-## How it works
+One assistant handles separate topic conversations. Clients use `ask_nis(question, thread_id=None)` through a separate LiteLLM MCP gateway or directly through FastMCP embedded in Coordination. Both paths share the same runtime and PostgreSQL conversation lifecycle. See the [Coordination guide](setup/containers/coordination.md#selected-one-assistant-target--2026-10-02) for the interface.
 
-![Nora conversation: Chat connects to Coordination, which calls Retrieval and a model and saves PostgreSQL checkpoints.](architecture/diagrams/conversation.svg)
+## From question to answer
 
-[Edit the Excalidraw diagram](architecture/diagrams/conversation.excalidraw.md).
+![A user question flows through the Nora UI and agent to retrieval and the answer model; conversation state is saved in PostgreSQL.](architecture/diagrams/conversation.gif)
 
-Nora is built from:
+[Local browser version](architecture/diagrams/conversation.html) · [Architecture](architecture/Architecture%20Concept.md)
 
-- One Python package that owns preparation, indexing, Retrieval MCP and Coordination.
-- OSS Deep Agents with LangChain/LangGraph for the agent runtime.
-- A Next.js browser UI using CopilotKit and AG-UI.
-- BGE and Qdrant for shared dense/lexical retrieval.
-- PostgreSQL for conversation checkpoints.
-- Ollama Cloud and Fireworks.ai for answer inference.
+The main runtime has five responsibilities:
 
-The [selected target architecture](architecture/diagrams/README.md) gives each agent role its own runtime container and adds:
+- **UI:** Next.js, CopilotKit and AG-UI.
+- **Agent:** LangChain/LangGraph Deep Agent inside Coordination.
+- **Retrieval:** BGE embeddings and Qdrant search through MCP.
+- **Memory:** PostgreSQL conversation checkpoints.
+- **Inference:** Ollama Cloud and Fireworks.ai, with optional local Ollama.
 
-- Automatic balanced model routing across the three inference providers, inside each role runtime.
-- A shared BGE server for query and document encoding.
-- Four temporary job containers for manual ingestion.
-- A dedicated GCS bucket for prepared full documents.
-- Atomic release activation that advances prepared documents and the Qdrant index together, with rollback to the previous version.
+## Updating knowledge
 
-The simpler illustrations here show concepts; the detailed views show container boundaries and current implementation gaps.
+Knowledge updates run separately from conversations: select sources, convert and prepare them, embed, then import and verify a complete release before activation. Additions are assembled with the retained corpus. Follow [Run an update](workflows/ingestion/knowledge-base-update-checklist.md) for the current local deployment or [How ingestion works](workflows/ingestion/README.md) for the technical contracts; GCS cutover remains pending.
 
-Normal answers are plain text; internal document IDs support reads, maintenance and evaluation.
+![Selected originals are converted and normalized, then embedded and imported into Qdrant.](architecture/diagrams/manual-ingestion.gif)
 
-## Knowledge updates
+[Local browser version](architecture/diagrams/manual-ingestion.html) · [Run an update](workflows/ingestion/knowledge-base-update-checklist.md) · [Understand the pipeline](workflows/ingestion/README.md)
 
-Document ingestion is a separate, manually invoked workflow. It preserves original files and prepares text and a rebuildable index for retrieval. User questions never start ingestion.
-
-![Manual ingestion: selected originals are extracted and normalized into prepared text, then chunked, embedded with BGE, and imported into Qdrant.](architecture/diagrams/manual-ingestion.svg)
-
-[Edit the Excalidraw diagram](architecture/diagrams/manual-ingestion.excalidraw.md) · [Ingestion workflow](workflows/ingestion/README.md).
-
-## Try the source
-
-Use Python 3.12 and Node.js 22.22 or newer. From the repository root:
-
-```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install -c requirements.lock -e '.[server,dev]'
-npm --prefix ui ci
-make validate
-```
-
-These checks use synthetic data and model doubles. To exercise the actual embedding model and MCP protocol, follow the [synthetic smoke test](setup/README.md#test-real-retrieval). To run the application, follow the [Compose setup](setup/README.md#run-the-application).
-
-## Current maturity
+## Current state
 
 | Area | State |
 | --- | --- |
-| Shared backend and one UI | Implemented; Python tests, TypeScript and production UI build checked |
-| Real BGE and MCP retrieval | Three synthetic documents/questions pass the local smoke test |
-| Selected container split (D167/D169/D172) | Implemented: shared BGE server, four job containers, per-role runtimes with automatic provider routing, checkpoint namespacing and thread ownership; real PostgreSQL/Docker and dedicated GCS bucket remain rollout work |
-| Portable Compose configuration | Built and exercised on ARM Linux with synthetic Ollama answers and PostgreSQL recovery into fresh storage |
-| Answer generation and PostgreSQL persistence | Implemented; this refactor was tested with a model double and an in-memory checkpointer |
-| Optional model routing | Automatic quality-first routing implemented per role; quality/cost/latency weights are explicit assumptions awaiting measurement |
-| Private reference deployment | Historical evidence retained; this source refactor has not been deployed there |
+| Single assistant and browser UI | Implemented in source; validated with synthetic fixtures and local UI tests |
+| Shared retrieval over MCP | Implemented; BGE/Qdrant search and read tested with synthetic data |
+| PostgreSQL conversation persistence | Implemented; checkpoint continuity tested with local fixtures |
+| Provider abstraction and selection | Implemented; Ollama Cloud and Fireworks.ai supported, optional local Ollama |
+| Ingestion maintenance | Four-stage container workflow implemented; routine live GCS refresh pending |
+| Repeatable tests and limits | Synthetic contract tests, UI checks, lint, link and release checks are provided |
+| Answer quality | Synthetic smoke passes; representative private evaluation remains open |
 
-The small synthetic result is an integration check. It does not replace the failing six-query private regression or establish general answer quality. [Validation details](evaluation/VALIDATION.md) and the [roadmap](Plan.md) keep these scopes explicit.
+The exact evidence boundary is in [Validation](evaluation/VALIDATION.md) and [Private deployment status](setup/private-deployment/STATUS.md). Source implementation does not by itself prove a live rollout. Preparation-answer repair can still return empty with the current provider request shape; see the [open repair issue](Plan.md#unresolved-repair-outcome). Enterprise shared memory across harnesses, Kubernetes/SSO, commercial scale and measured customer AI latency are unimplemented/unverified.
 
-## Explore and contribute
+## Run the source
 
-1. [Architecture](architecture/Architecture%20Concept.md) and [service inventory](setup/containers/README.md).
-2. [Setup](setup/README.md), [source map](REPO_MAP.md) and [contributing](CONTRIBUTING.md).
-3. [Evaluation](evaluation/README.md) and [architecture decisions](Decisions.md).
-4. [Source release](PUBLISHING.md), [security](SECURITY.md) and [data contract](data/Source%20Inventory.md).
+Use Python 3.12, Node.js 22.22 or newer, and pnpm 12.8.1. From the repository root:
 
-Nora uses the [MIT license](LICENSE). Preserve [upstream notices](NOTICE.md) and [Templates/LICENSE](Templates/LICENSE). The included examples are fictional MIT-licensed fixtures. Other documents, model weights and dependencies retain their own terms.
+```bash
+conda create -n nora-ai python=3.12 pip
+conda run -n nora-ai python -m pip install -c requirements.lock -e '.[server,gcs,dev]'
+mise trust
+pnpm --dir ui install --frozen-lockfile
+make validate
+```
+
+These checks use synthetic documents and model doubles. Follow [Setup](setup/README.md) for the application and real retrieval smoke test.
+
+## Where to go next
+
+1. [Roadmap](Plan.md) — current priorities only.
+2. [Repository map](REPO_MAP.md) — owner for each part of the project.
+3. [Architecture](architecture/Architecture%20Concept.md) and [diagrams](architecture/diagrams/README.md) — design and boundaries.
+4. [Setup](setup/README.md) and [containers](setup/containers/README.md) — runtime and deployment.
+5. [Evaluation](evaluation/README.md) — quality checks and known limits.
+6. [Decisions](Decisions.md) — accepted architecture and historical rationale.
+
+Nora uses the [MIT license](LICENSE). Preserve [upstream notices](NOTICE.md) and [Templates/LICENSE](Templates/LICENSE). The included examples are fictional fixtures.

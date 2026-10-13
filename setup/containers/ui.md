@@ -2,13 +2,12 @@
 
 [Services](README.md) · [Setup](../README.md)
 
-The UI lets a user ask a question, continue a conversation, or start a new one. It shows the prepared-document count returned by backend health rather than a hard-coded corpus size.
+The browser lets a user ask a question, continue a topic or create a new conversation. For example, an Atlas conversation remains available after a page reload while a new topic gets a separate UUID.
 
-[One Next.js application](../../ui/app/page.tsx) uses CopilotKit and AG-UI. Its server proxies authenticated requests to Coordination, bounds incoming bodies, checks origins and translates unavailable services into a useful message. Credentials are read at request time by [server utilities](../../ui/lib/backend.ts); the production build needs no credential file.
+One Next.js application uses CopilotKit and AG-UI through `/api/copilotkit`. Its server forwards authenticated requests to one Coordination backend. `/api/history/{thread_id}` reloads the current assistant history. There is no role picker, role-specific backend map or transfer route.
 
-The browser retains its thread ID locally. Coordination stores conversation content in PostgreSQL and returns history on reconnect. This is a personal-workspace interface; browser storage and an origin check do not establish user identities or tenant isolation.
+The `nis-assistant-thread` browser key stores the current UUID. Conversation content lives in PostgreSQL, not browser storage. Stored legacy role history remains outside this interface. Browser storage and origin checks do not provide tenant identities.
 
-The UI's tests, TypeScript check and production build pass. [Validation](../../evaluation/VALIDATION.md) separates synthetic browser checks from a complete live deployment.
+Server utilities read credentials at request time; production builds do not need credential files. Body limits and origin checks protect incoming requests, and unavailable services produce a useful error. The displayed prepared-document count comes from backend health.
 
-
-The UI container routes each conversation to a role-specific Coordination/Deep Agent container (`role-knowledge`, `role-research`, `role-interview`). It stores the selected role and per-role thread IDs, proxies AG-UI and history calls by role, and supports explicit user-reviewed context transfer from one role to another. See [D167](../../Decisions.md#selected-target-separate-runtime-and-job-containers).
+[Validation](../../evaluation/VALIDATION.md) separates synthetic browser checks from real provider/corpus acceptance. [Deployment status](../private-deployment/STATUS.md) owns dated live results.

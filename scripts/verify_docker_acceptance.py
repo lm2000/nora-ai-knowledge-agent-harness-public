@@ -63,7 +63,7 @@ def ask_agent(graph, question: str, thread_id: str) -> str:
     result = asyncio.run(
         graph.ainvoke(
             {"messages": [HumanMessage(content=question)]},
-            {"configurable": {"thread_id": thread_id}, "recursion_limit": 10},
+            {"configurable": {"thread_id": thread_id}, "recursion_limit": 32},
         )
     )
     for message in reversed(result["messages"]):

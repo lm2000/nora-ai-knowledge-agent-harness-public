@@ -1,4 +1,4 @@
-"""Real PostgreSQL checkpointer restart tests for role runtimes.
+"""Real PostgreSQL checkpointer restart tests for assistant conversations.
 
 Uses the coordinator-provided fixture from ../POSTGRES-FIXTURE.json and
 synthetic model/retrieval doubles.  Each test gets a uniquely named database.
@@ -16,10 +16,10 @@ from langchain_core.language_models import BaseChatModel
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
 from nora.agent import create_graph
+from nora.assistant import AssistantConfig
 from nora.config import Settings
 from nora.coordination import Runtime, create_app
 from nora.ownership import PostgresOwnershipStore
-from nora.roles import RoleConfig
 
 FIXTURE_PATH = Path(__file__).resolve().parents[2] / "POSTGRES-FIXTURE.json"
 
@@ -84,7 +84,7 @@ class _FakeModel(BaseChatModel):
 
 @pytest.fixture
 async def pg_runtime(tmp_path):
-    """Build a Knowledge runtime backed by a fresh Postgres checkpointer."""
+    """Build an assistant runtime backed by a fresh Postgres checkpointer."""
     fixture_dsn = _require_fixture()
     if not await _pg_available(fixture_dsn):
         pytest.skip(
@@ -101,21 +101,22 @@ async def pg_runtime(tmp_path):
     parsed["dbname"] = db_name
     conninfo = psycopg.conninfo.make_conninfo(**parsed)
 
-    settings = replace(Settings(), state_dir=tmp_path, role="knowledge")
-    config = RoleConfig(
-        role="knowledge",
-        display="Knowledge Assistant",
-        system_prompt="You are knowledge",
+    settings = replace(Settings(), state_dir=tmp_path)
+    config = AssistantConfig(
+        display="NIS Assistant",
+        system_prompt="You are the NIS assistant",
         knowledge_tools=frozenset({"search_knowledge", "read_document"}),
         call_limit=3,
         models=[],
     )
     async with AsyncPostgresSaver.from_conn_string(conninfo) as saver:
         await saver.setup()
-        graph = create_graph(_FakeModel(), _KnowledgeDouble(), saver, settings, role_config=config)
+        graph = create_graph(
+            _FakeModel(), _KnowledgeDouble(), saver, settings, assistant_config=config
+        )
         ownership = PostgresOwnershipStore(conninfo)
         await ownership.setup()
-        runtime = Runtime(graph, _KnowledgeDouble(), "knowledge", "fake", ownership)
+        runtime = Runtime(graph, _KnowledgeDouble(), "fake", ownership)
         yield runtime, conninfo, settings
 
     async with await psycopg.AsyncConnection.connect(fixture_dsn, autocommit=True) as conn:
@@ -136,23 +137,24 @@ async def test_checkpointer_state_survives_process_restart(pg_runtime):
         assert response.json()["answer"] == "synthetic"
 
     # Rebuild the graph with a fresh saver connection pointing at the same DB.
-    config = RoleConfig(
-        role="knowledge",
-        display="Knowledge Assistant",
-        system_prompt="You are knowledge",
+    config = AssistantConfig(
+        display="NIS Assistant",
+        system_prompt="You are the NIS assistant",
         knowledge_tools=frozenset({"search_knowledge", "read_document"}),
         call_limit=3,
         models=[],
     )
     async with AsyncPostgresSaver.from_conn_string(conninfo) as saver:
         await saver.setup()
-        graph = create_graph(_FakeModel(), _KnowledgeDouble(), saver, settings, role_config=config)
+        graph = create_graph(
+            _FakeModel(), _KnowledgeDouble(), saver, settings, assistant_config=config
+        )
         ownership = PostgresOwnershipStore(conninfo)
         await ownership.setup()
-        runtime2 = Runtime(graph, _KnowledgeDouble(), "knowledge", "fake", ownership)
+        runtime2 = Runtime(graph, _KnowledgeDouble(), "fake", ownership)
 
         with TestClient(create_app(settings, runtime=runtime2, token="test")) as client:
-            history = client.get(f"/history/knowledge/{thread}", headers=auth)
+            history = client.get(f"/history/{thread}", headers=auth)
             assert history.status_code == 200, history.text
             messages = history.json()["messages"]
             assert any("First turn" in m["content"] for m in messages)
@@ -164,44 +166,23 @@ async def test_checkpointer_state_survives_process_restart(pg_runtime):
             assert response.status_code == 200, response.text
 
 
-async def test_postgres_ownership_survives_runtime_restart(pg_runtime):
-    """Ownership claimed by one runtime is enforced by a restarted runtime."""
+async def test_postgres_historical_owner_is_excluded(pg_runtime):
     runtime, conninfo, settings = pg_runtime
-    auth = {"Authorization": "Bearer test"}
+    import psycopg
+
     thread = str(uuid.uuid4())
-
-    with TestClient(create_app(settings, runtime=runtime, token="test")) as client:
-        response = client.post(
-            "/ask", json={"question": "Knowledge question", "thread_id": thread}, headers=auth
+    async with await psycopg.AsyncConnection.connect(conninfo) as conn:
+        await conn.execute(
+            "INSERT INTO nora_thread_ownership (thread_id, role) VALUES (%s, %s)",
+            (thread, "research"),
         )
-        assert response.status_code == 200, response.text
-
-    # A new runtime with a fresh connection still denies Research the same UUID.
-    config = RoleConfig(
-        role="research",
-        display="Research Assistant",
-        system_prompt="You are research",
-        knowledge_tools=frozenset({"search_knowledge", "read_document"}),
-        call_limit=3,
-        models=[],
-    )
-    async with AsyncPostgresSaver.from_conn_string(conninfo) as saver:
-        await saver.setup()
-        graph = create_graph(_FakeModel(), _KnowledgeDouble(), saver, settings, role_config=config)
-        ownership = PostgresOwnershipStore(conninfo)
-        await ownership.setup()
-        research_runtime = Runtime(graph, _KnowledgeDouble(), "research", "fake", ownership)
-        research_settings = replace(settings, role="research")
-
-        with TestClient(
-            create_app(research_settings, runtime=research_runtime, token="test")
-        ) as client:
-            denied = client.post(
-                "/ask",
-                json={"question": "Research question", "thread_id": thread, "role": "research"},
-                headers=auth,
-            )
-            assert denied.status_code == 403, denied.text
-            body = denied.text.lower()
-            assert "knowledge" not in body
-            assert "owned by" not in body
+        await conn.commit()
+    with TestClient(create_app(settings, runtime=runtime, token="test")) as client:
+        auth = {"Authorization": "Bearer test"}
+        assert (
+            client.post(
+                "/ask", json={"question": "Question", "thread_id": thread}, headers=auth
+            ).status_code
+            == 403
+        )
+        assert client.get(f"/history/{thread}", headers=auth).status_code == 403

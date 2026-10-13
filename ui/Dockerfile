@@ -1,10 +1,13 @@
 FROM node:22.22.0-bookworm-slim@sha256:dd9d21971ec4395903fa6143c2b9267d048ae01ca6d3ea96f16cb30df6187d94 AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1 COPILOTKIT_TELEMETRY_DISABLED=true DO_NOT_TRACK=1
-COPY ui/package*.json ./
-RUN npm ci --no-audit --no-fund
+COPY ui/package.json ./
+COPY ui/pnpm-lock.yaml ./
+COPY ui/pnpm-workspace.yaml ./
+RUN npm install --global pnpm@12.8.1 \
+    && pnpm install --frozen-lockfile
 COPY ui/ ./
-RUN npm run build
+RUN pnpm run build
 
 FROM node:22.22.0-bookworm-slim@sha256:dd9d21971ec4395903fa6143c2b9267d048ae01ca6d3ea96f16cb30df6187d94
 WORKDIR /app

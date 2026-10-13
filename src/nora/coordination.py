@@ -1,35 +1,64 @@
 """HTTP and AG-UI adapters around the shared Deep Agent graph."""
 
 import asyncio
+import logging
 import uuid
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from typing import Annotated
 
 from ag_ui.core import RunAgentInput
 from ag_ui.encoder import EventEncoder
 from ag_ui_langgraph import LangGraphAgent
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from nora.agent import create_graph
+from nora.assistant import assistant_thread_id, load_assistant_config
 from nora.auth import BearerAuth, BodyLimit
 from nora.budget import BudgetExceeded, RequestBudget
 from nora.config import Settings, credential
 from nora.mcp_client import KnowledgeClient
 from nora.ownership import InMemoryOwnershipStore, OwnershipStore, PostgresOwnershipStore
-from nora.roles import load_role_config, role_thread_id, valid_role
+from nora.providers import credential_available
 from nora.selector import build_selector
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class Runtime:
     graph: object
     knowledge: object
-    role: str
     provider: str
     ownership: OwnershipStore
+
+
+def _warn_missing_provider_credentials(models) -> None:
+    """Log startup warnings for assistant model candidates lacking a credential.
+
+    The selector skips these candidates per request; the one-shot startup
+    warning makes the misconfiguration visible before the first request.
+    Credential names are logged, never values.
+    """
+    missing = [spec for spec in models if not credential_available(spec)]
+    for spec in missing:
+        logger.warning(
+            "Assistant model %s/%s has no configured provider credential (%s); "
+            "the selector will skip it until configured",
+            spec.provider,
+            spec.model,
+            spec.token_name,
+        )
+    if models and len(missing) == len(models):
+        logger.warning(
+            "Assistant has no model with a configured provider credential; "
+            "requests will fail until one is configured",
+        )
 
 
 @asynccontextmanager
@@ -47,42 +76,28 @@ async def production_runtime(settings: Settings):
     knowledge = KnowledgeClient(
         settings.retrieval_url, credential("MCP_TOKEN"), settings.tool_timeout
     )
-    role_config = load_role_config(settings.role, settings)
+    assistant_config = load_assistant_config(settings)
+    _warn_missing_provider_credentials(assistant_config.models)
     async with AsyncPostgresSaver.from_conn_string(conninfo) as saver:
         await saver.setup()
-        if role_config.models:
-            model = build_selector(
-                role_config.models,
-                timeout=settings.request_timeout,
-                cost_weight=settings.selector_cost_weight,
-                latency_weight=settings.selector_latency_weight,
-                log_path=settings.selector_log_path,
-            )
-            provider = "role-selector"
-        else:
-            # Backward-compatible single-provider path for tests/legacy callers.
-            from nora.routing import build_model as legacy_build_model
-
-            model = legacy_build_model(settings)
-            provider = "routed-ollama" if model._llm_type == "nora-router" else "ollama"
+        model = build_selector(
+            assistant_config.models,
+            timeout=settings.request_timeout,
+            cost_weight=settings.selector_cost_weight,
+            latency_weight=settings.selector_latency_weight,
+            log_path=settings.selector_log_path,
+        )
+        provider = "assistant-selector"
         ownership = PostgresOwnershipStore(conninfo)
         await ownership.setup()
-        graph = create_graph(model, knowledge, saver, settings, role_config=role_config)
-        yield Runtime(graph, knowledge, settings.role, provider, ownership)
+        graph = create_graph(model, knowledge, saver, settings, assistant_config=assistant_config)
+        yield Runtime(graph, knowledge, provider, ownership)
 
 
 class Question(BaseModel):
     question: str = Field(min_length=1, max_length=4000)
     thread_id: uuid.UUID = Field(default_factory=uuid.uuid4)
-    role: str | None = None
-
-
-class TransferRequest(BaseModel):
-    source_role: str
-    source_thread_id: uuid.UUID
-    target_role: str
-    target_thread_id: uuid.UUID
-    message_ids: list[str] = Field(default_factory=list)
+    model_config = ConfigDict(extra="forbid")
 
 
 def create_app(
@@ -93,12 +108,10 @@ def create_app(
     runtime_factory=production_runtime,
 ):
     settings = settings or Settings.from_env()
-    if runtime is not None:
-        from dataclasses import replace
-
-        settings = replace(settings, role=runtime.role)
     token = credential("INTERNAL_TOKEN") if token is None else token
     semaphore = asyncio.Semaphore(settings.concurrency)
+    mcp = FastMCP("Nora Intelligence System", mask_error_details=True)
+    mcp_app = mcp.http_app(path="/", stateless_http=True, json_response=True)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -108,105 +121,24 @@ def create_app(
         if runtime is not None:
             app.state.runtime = runtime
             app.state.ownership = runtime.ownership or InMemoryOwnershipStore()
-            yield
+            async with mcp_app.lifespan(mcp_app):
+                yield
         else:
             async with runtime_factory(settings) as built:
                 app.state.runtime = built
                 app.state.ownership = built.ownership
-                yield
+                async with mcp_app.lifespan(mcp_app):
+                    yield
 
     app = FastAPI(lifespan=lifespan)
     app.add_middleware(BodyLimit)
     app.add_middleware(BearerAuth, token=token)
+    app.mount("/mcp", mcp_app)
 
-    def _assert_role(requested: str | None) -> str:
-        """Return the effective role, rejecting cross-role requests."""
-        effective = requested or settings.role
-        if not valid_role(effective):
-            raise HTTPException(400, f"Invalid role: {effective}")
-        if requested and requested != settings.role:
-            # Do not reveal which role this runtime serves or which role owns the thread.
-            raise HTTPException(
-                403,
-                "Thread is not available on this role runtime.",
-            )
-        return effective
-
-    def _namespaced(thread_id: uuid.UUID | str, role: str) -> str:
-        return role_thread_id(role, str(thread_id))
-
-    async def _get_graph_state(thread_id: uuid.UUID | str, role: str):
-        """Load graph state, preferring the role-namespaced id.
-
-        Falls back to the legacy un-namespaced id when the namespaced checkpoint
-        has no messages.  The AG-UI LangGraphAgent adapter currently persists
-        runs under the raw client thread id, while the /ask endpoint uses the
-        namespaced id; both must be resumable through /history.
-        """
-        namespaced = _namespaced(thread_id, role)
-        namespaced_state = None
-        try:
-            async with asyncio.timeout(settings.tool_timeout):
-                namespaced_state = await app.state.runtime.graph.aget_state(
-                    {"configurable": {"thread_id": namespaced}}
-                )
-            if namespaced_state.values.get("messages"):
-                return namespaced_state
-        except Exception:
-            pass
-        legacy_id = str(thread_id)
-        try:
-            async with asyncio.timeout(settings.tool_timeout):
-                return await app.state.runtime.graph.aget_state(
-                    {"configurable": {"thread_id": legacy_id}}
-                )
-        except Exception:
-            # If the namespaced lookup also failed, surface that error.
-            if namespaced_state is None:
-                raise
-            return namespaced_state
-
-    async def _resolve_thread_id(thread_id: uuid.UUID | str, role: str) -> str:
-        """Return the effective checkpoint id for a turn or resume.
-
-        Prefer the role-namespaced id.  Fall back to the legacy un-namespaced
-        checkpoint when it already holds messages and the namespaced checkpoint
-        is empty, so both /ask and AG-UI /agent runs can be resumed.
-        """
-        namespaced = _namespaced(thread_id, role)
-        try:
-            async with asyncio.timeout(settings.tool_timeout):
-                state = await app.state.runtime.graph.aget_state(
-                    {"configurable": {"thread_id": namespaced}}
-                )
-            if state.values.get("messages"):
-                return namespaced
-        except Exception:
-            pass
-        try:
-            async with asyncio.timeout(settings.tool_timeout):
-                state = await app.state.runtime.graph.aget_state(
-                    {"configurable": {"thread_id": str(thread_id)}}
-                )
-            if state.values.get("messages"):
-                return str(thread_id)
-        except Exception:
-            pass
-        return namespaced
-
-    async def _require_owner(thread_id: uuid.UUID, role: str) -> str:
-        """Claim or verify ownership of the client-visible thread id for role.
-
-        Raises 403 when the id is already owned by a different role.
-        """
-        accepted, owner = await app.state.ownership.claim(str(thread_id), role)
+    async def _require_owner(thread_id: uuid.UUID):
+        accepted, _ = await app.state.ownership.claim(str(thread_id))
         if not accepted:
-            # Do not reveal which role owns the thread to a different-role caller.
-            raise HTTPException(
-                403,
-                f"Thread {thread_id} is not available on this role runtime.",
-            )
-        return owner
+            raise HTTPException(403, "Conversation is unavailable.")
 
     async def take_slot():
         try:
@@ -230,7 +162,7 @@ def create_app(
                 raise RuntimeError("Retrieval is not ready")
             return {
                 "status": "ok",
-                "agent": app.state.runtime.role,
+                "agent": "assistant",
                 "provider": app.state.runtime.provider,
                 "documents": state.get("documents", 0),
                 "points": state.get("points", 0),
@@ -238,10 +170,9 @@ def create_app(
         except Exception:
             return JSONResponse({"status": "starting"}, status_code=503)
 
-    @app.post("/ask")
-    async def ask(data: Question):
-        role = _assert_role(data.role)
-        await _require_owner(data.thread_id, role)
+    async def ask_operation(data: Question):
+        """Shared in-process operation for the JSON and MCP entrances."""
+        await _require_owner(data.thread_id)
         if not data.question.strip() or len(data.question) > settings.question_limit:
             raise HTTPException(422, "Please provide a shorter, nonempty question")
         await take_slot()
@@ -250,29 +181,32 @@ def create_app(
                 app.state.runtime.knowledge.pinned(),
                 asyncio.timeout(settings.request_timeout),
             ):
-                effective_thread_id = await _resolve_thread_id(data.thread_id, role)
+                effective_thread_id = assistant_thread_id(str(data.thread_id))
                 result = await app.state.runtime.graph.ainvoke(
                     {"messages": [HumanMessage(content=data.question)]},
                     {
                         "configurable": {"thread_id": effective_thread_id},
-                        "recursion_limit": 10,
                     },
-                )
-                answer = next(
-                    (
-                        m.content
-                        for m in reversed(result["messages"])
-                        if isinstance(m, AIMessage) and m.content and not m.tool_calls
-                    ),
-                    "",
                 )
                 last = max(
                     i for i, m in enumerate(result["messages"]) if isinstance(m, HumanMessage)
                 )
+                answer = next(
+                    (
+                        m.content
+                        for m in reversed(result["messages"][last + 1 :])
+                        if isinstance(m, AIMessage) and m.content and not m.tool_calls
+                    ),
+                    "",
+                )
+                if not str(answer).strip():
+                    # A provider can exhaust its output budget without raising.
+                    # Never publish an empty success or reuse a prior turn's answer.
+                    raise RuntimeError("Current turn produced no final answer")
                 return {
                     "answer": answer,
                     "thread_id": str(data.thread_id),
-                    "role": role,
+                    "role": "assistant",
                     "knowledge_calls": sum(
                         isinstance(m, ToolMessage) for m in result["messages"][last:]
                     ),
@@ -286,20 +220,43 @@ def create_app(
         finally:
             semaphore.release()
 
-    @app.get("/history/{thread_id}")
-    async def history_alias(thread_id: uuid.UUID):
-        """Backward-compatible history endpoint: uses this runtime's role."""
-        return await _history(settings.role, thread_id)
+    @app.post("/ask")
+    async def ask(data: Question):
+        return await ask_operation(data)
 
-    @app.get("/history/{role}/{thread_id}")
-    async def history(role: str, thread_id: uuid.UUID):
-        return await _history(role, thread_id)
+    @mcp.tool(
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        }
+    )
+    async def ask_nis(
+        question: Annotated[str, Field(min_length=1, max_length=4000)],
+        thread_id: uuid.UUID | None = None,
+    ) -> dict:
+        """Ask NIS about saved knowledge, comparisons or interview material.
 
-    async def _history(role: str, thread_id: uuid.UUID):
-        _assert_role(role)
-        await _require_owner(thread_id, role)
+        Omit thread_id to start a new conversation. Reuse the returned UUID for
+        a follow-up. NIS saves the conversation and chooses its own model.
+        """
         try:
-            state = await _get_graph_state(thread_id, role)
+            result = await ask_operation(
+                Question(question=question, thread_id=thread_id or uuid.uuid4())
+            )
+        except HTTPException as error:
+            # Only curated application errors reach clients, never provider details.
+            raise ToolError(f"NIS request failed ({error.status_code}): {error.detail}") from None
+        return {"answer": result["answer"], "thread_id": result["thread_id"]}
+
+    @app.get("/history/{thread_id}")
+    async def history(thread_id: uuid.UUID):
+        await _require_owner(thread_id)
+        try:
+            state = await app.state.runtime.graph.aget_state(
+                {"configurable": {"thread_id": assistant_thread_id(str(thread_id))}}
+            )
         except Exception as error:
             raise HTTPException(
                 503, "Conversation history is unavailable. Please retry."
@@ -318,63 +275,6 @@ def create_app(
             ]
         }
 
-    @app.post("/transfer")
-    async def transfer(data: TransferRequest):
-        """Return a user-reviewable summary of selected source messages.
-
-        The summary is handed to the client; the target role only receives it
-        when the user posts it as the first message of a new target thread.
-        """
-        if data.source_role == data.target_role:
-            raise HTTPException(400, "Source and target role must differ")
-        if not valid_role(data.source_role) or not valid_role(data.target_role):
-            raise HTTPException(400, "Invalid source or target role")
-        source_accepted, source_owner = await app.state.ownership.claim(
-            str(data.source_thread_id), data.source_role
-        )
-        if not source_accepted:
-            raise HTTPException(
-                403,
-                f"Source thread is owned by role '{source_owner}', not '{data.source_role}'.",
-            )
-        try:
-            state = await _get_graph_state(data.source_thread_id, data.source_role)
-        except Exception as error:
-            raise HTTPException(503, "Source conversation is unavailable.") from error
-        messages = [
-            m
-            for m in state.values.get("messages", [])
-            if isinstance(m, (HumanMessage, AIMessage))
-            and m.content
-            and not getattr(m, "tool_calls", None)
-        ]
-        if data.message_ids:
-            messages = [m for m in messages if getattr(m, "id", "") in set(data.message_ids)]
-        if not messages:
-            raise HTTPException(404, "No transferable messages found")
-        # Produce a concise, reviewable summary. It is deterministic text, not a
-        # hidden checkpoint dump; the user sees it before confirming transfer.
-        lines = [f"Summary from {data.source_role} conversation:"]
-        total = 0
-        cap = 2400
-        for m in messages:
-            prefix = "User:" if isinstance(m, HumanMessage) else "Assistant:"
-            text = f"{prefix} {m.content}"
-            if total + len(text) > cap:
-                text = text[: cap - total - 3] + "..."
-            lines.append(text)
-            total += len(text)
-            if total >= cap:
-                break
-        return {
-            "summary": "\n\n".join(lines),
-            "source_role": data.source_role,
-            "source_thread_id": str(data.source_thread_id),
-            "target_role": data.target_role,
-            "target_thread_id": str(data.target_thread_id),
-            "message_count": len(messages),
-        }
-
     @app.post("/agent")
     async def agent(data: RunAgentInput, request: Request):
         if len(data.messages) > 40 or len(data.model_dump_json().encode()) > 70000:
@@ -391,24 +291,21 @@ def create_app(
             uuid.UUID(data.thread_id)
         except ValueError as error:
             raise HTTPException(400, "Invalid conversation") from error
-        role = settings.role
-        header_role = request.headers.get("X-Nora-Role")
-        if header_role:
-            role = _assert_role(header_role)
+        if request.headers.get("X-Nora-Role") is not None:
+            raise HTTPException(422, "Role selection is unsupported.")
         thread_uuid = uuid.UUID(data.thread_id)
-        await _require_owner(thread_uuid, role)
+        await _require_owner(thread_uuid)
         encoder = EventEncoder(accept=request.headers.get("accept"))
         await take_slot()  # Budget errors become HTTP 429 before streaming headers.
 
-        effective_thread_id = await _resolve_thread_id(data.thread_id, role)
+        effective_thread_id = assistant_thread_id(str(data.thread_id))
 
         async def events():
             adapter = LangGraphAgent(
-                name=role,
+                name="assistant",
                 graph=app.state.runtime.graph,
                 config={
                     "configurable": {"thread_id": effective_thread_id},
-                    "recursion_limit": 10,
                 },
                 emit_raw_events=False,
             )
@@ -420,13 +317,18 @@ def create_app(
                         app.state.runtime.knowledge.pinned(),
                         asyncio.timeout(settings.request_timeout),
                     ):
-                        async for event in adapter.run(data):
+                        # The adapter replaces config.thread_id with the input id.
+                        # Use our checkpoint namespace and restore public event IDs.
+                        agent_input = data.model_copy(update={"thread_id": effective_thread_id})
+                        async for event in adapter.run(agent_input):
                             event_type = getattr(event.type, "value", str(event.type))
                             # Knowledge tools execute entirely on the server. Keep
                             # their overlapping provider deltas out of the plain
                             # answer UI; graph execution and checkpoints retain them.
                             if event_type.startswith(("REASONING", "TOOL_CALL_")):
                                 continue
+                            if getattr(event, "thread_id", None) == effective_thread_id:
+                                event = event.model_copy(update={"thread_id": data.thread_id})
                             await queue.put(encoder.encode(event))
                 except Exception:
                     # Errors are surfaced by the lack of further events; the
@@ -452,7 +354,7 @@ def create_app(
                     yield item
             except asyncio.CancelledError:
                 # Keep the producer running so the graph can finish and persist
-                # state even if the client disconnects or switches roles.
+                # state even if the client disconnects or starts another conversation.
                 pass
 
         return StreamingResponse(events(), media_type=encoder.get_content_type())

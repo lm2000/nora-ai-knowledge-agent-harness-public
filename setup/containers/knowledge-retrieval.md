@@ -1,12 +1,12 @@
 # Knowledge Retrieval
 
-[Services](README.md) · [Data contract](../../data/Source%20Inventory.md)
+[Services](README.md) · [Data contract](../../data/Data%20Contract.md)
 
 Retrieval exposes two tools: search for passages and read more of a selected document. Coordination uses this boundary rather than accessing the index or prepared store directly.
 
 ## Selected target: shared Retrieval and BGE
 
-Retrieval remains a separate shared MCP container for all agent roles and intended clients. It calls the **shared BGE server container** for query encoding, queries Qdrant for passages and reads full prepared documents through the local/GCS document-store interface. Agent roles use MCP rather than calling BGE or Qdrant directly.
+Retrieval remains a separate shared MCP container for the NIS assistant and intended clients. It calls the **shared BGE server container** for query encoding, queries Qdrant for passages and reads full prepared documents through the local/GCS document-store interface. The assistant uses MCP rather than calling BGE or Qdrant directly.
 
 The separate batch embedding worker is BGE's other caller. Preserve the pinned model revision, normalized vector dimensions and complete input limit, with query instructions applied only in query mode. Implement bounded batch concurrency and backpressure so imports cannot consume all interactive encoding capacity. [The inventory](README.md#shared-bge-capacity) owns the capacity policy.
 

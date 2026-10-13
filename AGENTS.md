@@ -2,13 +2,15 @@
 
 ## Project context
 
-Read [README.md](README.md), [Decisions.md](Decisions.md), [Plan.md](Plan.md) and the guide for the area being changed. Follow any separately supplied operator instructions and task-specific model or execution preferences.
+Read [README.md](README.md), [Plan.md](Plan.md), [Decisions.md](Decisions.md), [REPO_MAP.md](REPO_MAP.md) and the guide for the area being changed. These are the current shared project entry points for Codex and other AI tools. Use Git history for superseded plans and handovers instead of keeping duplicate current-looking documents. Maintainers also read the separately maintained Nora Intelligence System Operations Guidance when available locally. Follow any separately supplied operator instructions and task-specific model or execution preferences.
 
-Nora is a self-hosted knowledge assistant. Coordination contains an OSS Deep Agent with LangChain/LangGraph underneath. Retrieval is a separate MCP service over BGE, Qdrant and prepared text. PostgreSQL stores conversation checkpoints. Ingestion is a separate manual workflow. D167 selects one Coordination/Deep Agent container per role, a shared BGE server and four separate manual ingestion job containers; current Compose still needs that refactor. Keep target diagrams and implementation status distinct.
+NIS is a private single-assistant knowledge service. Coordination contains OSS Deep Agents/LangGraph, the incumbent selector and conversation lifecycle. Retrieval MCP uses shared BGE, Qdrant and prepared text; PostgreSQL stores assistant checkpoints. LiteLLM is a separate MCP gateway to FastMCP embedded in Coordination. The four ingestion jobs run separately on an operator command.
 
-D169 records the accepted review choices for implementation: a dedicated GCS prepared-document bucket; one manual command automating four ingestion jobs, validation and version activation; separate role chats; and automatic model selection inside each role runtime. The routing objective meets required quality before comparing cost and latency. Application model access includes Ollama and Fireworks.ai. Preserve the distinction between selected requirements and implemented adapters.
+Current assistant chats and corpus data must remain intact. Old role interfaces/configuration are removed; stored legacy role chats are retained but not exposed or migrated. Preserve `assistant:<UUID>` checkpoints, minimal owner isolation, graph completion, bounded word-length repair, three retrieval calls including Grounding and four logical model calls. Model inference uses Ollama Cloud and Fireworks.ai with optional local Ollama. Hermes is excluded from harness inference, execution and review unless the owner explicitly reverses that choice.
 
-D170 orders the work: finish documentation and source cleanup for GitHub, implement the accepted target, then roll it out. Publication or documentation work does not itself change a running deployment. Follow the operator's chosen executor and model preferences for each task.
+Scoped preparation-preservation grounding searches for the owning guide and reads one matching returned ID before generation when available. Seed both automatic operations into the same per-turn retrieval counter; search plus read leaves at most one model-requested call. Candidate selection permits a read, not source attribution. See [assistant behavior](agents/README.md#answer-behavior).
+
+Use [Decisions](Decisions.md) for accepted design, [Plan](Plan.md) for active progress and [deployment status](setup/private-deployment/STATUS.md) for dated live evidence. Publication does not change running services. The ordinary ingestion procedure is backup-first; additions require retained-corpus assembly, rebuilds require the complete desired set, and a literal Retrieval pin requires explicit deployment activation. GCS cutover remains pending.
 
 ## Working conventions
 
@@ -19,12 +21,13 @@ D170 orders the work: finish documentation and source cleanup for GitHub, implem
 - Preserve source identity needed for maintenance and evaluation; preprocessing does not rewrite source meaning.
 - Use explicit configuration for operator and deployment differences across supported targets.
 - Keep credentials, private corpus material, conversation state and raw private traces out of contributions.
+- Record durable project decisions and current status in the shared repository guides and maintainer operating records, not only in an AI tool's chat or memory. Link to portable personal context instead of copying private preferences into public documentation.
 
 ## Documentation
 
 Write in English. Start with purpose and an example, then give the procedure or technical reference. Commands should name their execution location and expected result. Use relative repository links.
 
-Keep editable Excalidraw sources under `architecture/diagrams/` as Obsidian-native `.excalidraw.md` files so they open with full plugin functionality. Embed matching SVG exports with standard Markdown image links, and refresh each SVG when its source changes. Existing Mermaid diagrams remain in their owning Markdown documents. Keep labels short, separate conversation and ingestion paths, and use tables for detailed contracts. Archived private drawings and operating history remain outside the public documentation set.
+Use two maintained files per diagram under `architecture/diagrams/`: editable interactive HTML with inline SVG, and a matching GIF exported from that HTML. Embed the GIF with standard Markdown image links and place the local HTML link directly below it. Regenerate the GIF when HTML changes. Separate Excalidraw, SVG, JSON and Mermaid sources are not required by this convention. Retire old active assets after replacing their links. A repository HTML link opens source; identify it as a local browser version unless a documentation site already exists. Keep labels short and distinguish conversation and manual ingestion paths.
 
 Update the relevant public architecture decision or roadmap when an accepted change alters them. Owner-specific operational decisions and approvals belong in the separately maintained private operating record.
 

@@ -6,7 +6,7 @@ Useful contributions improve the shared knowledge path, its tests, or its docume
 
 ## Development
 
-Follow [development setup](setup/README.md#install-for-development), then run `make validate`. This runs Python contracts and cloud-planning tests, lint, UI tests, TypeScript, the production UI build, shell syntax and documentation checks. It needs no private data or answer-model credential.
+Follow [development setup](setup/README.md#install-for-development), then run `make validate`. The repository uses the project-specific `nora-ai` Conda environment. The existing mise shell hook activates it when a terminal enters this directory and restores the previous environment after leaving. This runs Python contracts and cloud-planning tests, lint, UI tests, TypeScript, the production UI build, shell syntax and documentation checks. It needs no private data or answer-model credential.
 
 Use `make test`, `make lint` or `make ui-check` while iterating. Run the [real retrieval smoke test](setup/README.md#test-real-retrieval) when changing representation, preparation, search or MCP behavior. The optional Docling extra and complete container startup have separate validation needs.
 
@@ -20,7 +20,7 @@ Use explicit configuration and dependency injection at service boundaries. Modul
 
 Explain purpose and give an example before technical reference. Put a procedure in one owning guide and link to it elsewhere. State the scope of a measured result, including the use of doubles or synthetic data.
 
-List public Markdown and diagram counts in [public-docs.json](public-docs.json). The README uses native Excalidraw sources and matching SVG previews under `architecture/diagrams/`; include both in a change and refresh the preview when its source changes. Other Mermaid blocks render directly on GitHub. Local checks cover links, headings, fences and diagram inventory; inspect a real Mermaid render when changing a diagram.
+List public Markdown and diagram pairs in [public-docs.json](public-docs.json). Maintain one editable HTML file with inline SVG and its matching generated GIF under `architecture/diagrams/`. Embed the GIF with a standard Markdown image and place its HTML link directly below, labeled as a local browser version. Regenerate the GIF whenever its HTML changes and visually inspect it. Separate SVG, Excalidraw and Mermaid sources are not maintained. Run `make linkcheck` and `make diagrams`; structural checks and visual inspection establish different results.
 
 The [release manifest](release-manifest.json) lists every public source file explicitly. Add intended source files there. `make release-check` checks paths, document coverage and common private credential/path markers; `make release` builds a snapshot with per-file hashes. It never includes Git history or runtime data.
 

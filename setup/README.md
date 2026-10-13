@@ -4,17 +4,24 @@
 
 Use the same [Python package](../src/nora/__init__.py), [UI](../ui/package.json) and [Compose file](../compose.yaml) on a development machine or a Linux host. The cloud and Beelink pages describe target considerations; they do not maintain separate application copies.
 
+
+## Accepted target and current interfaces
+
+The settings and commands below configure the single-assistant implementation. The [one-assistant target](../Decisions.md#selected-target-one-assistant-with-a-gateway-backed-mcp-entrance) retains the selector, Deep Agents/LangGraph and PostgreSQL, and adds FastMCP in the existing FastAPI process with a separate LiteLLM gateway and direct MCP access. Its ask tool uses a question and optional thread UUID, with no role argument. The one-assistant interface and gateway are running in the dated private candidate. Bounded Codex/OpenClaw conversational checks passed on October 3; see [the acceptance record](private-deployment/STATUS.md#ordinary-unrestricted-openclaw-acceptance--2026-10-03) for the exact-prompt correction and remaining quality limits. Use [the roadmap](../Plan.md) for current priorities. Existing history is retained without migration or continuation through the new interface.
+
 ## Install for development
 
-Use Python 3.12, Node.js 22.22 or newer, and Make. Run commands from the repository root in an isolated environment:
+Use Python 3.12, Node.js 22.22 or newer, pnpm 12.8.1, Conda, mise and Make. Run commands from the repository root:
 
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install -c requirements.lock -e '.[server,dev]'
-npm --prefix ui ci
+conda create -n nora-ai python=3.12 pip
+conda run -n nora-ai python -m pip install -c requirements.lock -e '.[server,gcs,dev]'
+mise trust
+pnpm --dir ui install --frozen-lockfile
 make validate
 ```
+
+The checked-in mise configuration activates `nora-ai` when an interactive shell enters this repository and restores the previous environment after leaving it. Verify with `python -c 'import sys; print(sys.executable)'`; the path should be under the `nora-ai` Conda environment.
 
 Expected result: Python and UI tests, lint, TypeScript, production UI build, shell syntax and documentation checks pass without an inference credential or private corpus. [Validation](../evaluation/VALIDATION.md) records what was exercised during this refactor.
 

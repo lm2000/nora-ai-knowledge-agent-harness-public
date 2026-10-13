@@ -67,52 +67,33 @@ async def pg_store(tmp_path):
 
 
 async def test_postgres_ownership_claim_and_persistence(pg_store):
-    """Ownership claims survive across separate store instances using the same DB."""
     thread = str(uuid.uuid4())
-    accepted, owner = await pg_store.claim(thread, "research")
-    assert accepted and owner == "research"
-
+    assert await pg_store.claim(thread) == (True, "assistant")
     fresh = PostgresOwnershipStore(pg_store.conninfo)
-    assert await fresh.owner(thread) == "research"
-    accepted2, owner2 = await fresh.claim(thread, "knowledge")
-    assert not accepted2 and owner2 == "research"
+    assert await fresh.owner(thread) == "assistant"
+    assert await fresh.claim(thread) == (True, "assistant")
 
 
-async def test_concurrent_first_turn_claims_are_atomic(pg_store):
-    """Parallel claims for the same new thread resolve to a single owner."""
+async def test_concurrent_assistant_claims_are_atomic(pg_store):
     thread = str(uuid.uuid4())
-
-    async def claim(role: str) -> tuple[bool, str]:
-        return await pg_store.claim(thread, role)
-
-    results = await asyncio.gather(claim("research"), claim("interview"), claim("knowledge"))
-    owners = {owner for accepted, owner in results}
-    assert len(owners) == 1
-    assert sum(accepted for accepted, _ in results) == 1
+    results = await asyncio.gather(*(pg_store.claim(thread) for _ in range(3)))
+    assert results == [(True, "assistant")] * 3
 
 
-async def test_cross_role_claim_is_rejected(pg_store):
-    """A thread claimed by one role cannot be claimed by another."""
+async def test_historical_owner_is_not_reassigned(pg_store):
+    import psycopg
+
     thread = str(uuid.uuid4())
-    assert (await pg_store.claim(thread, "knowledge")) == (True, "knowledge")
-    accepted, owner = await pg_store.claim(thread, "research")
-    assert not accepted
-    assert owner == "knowledge"
+    async with await psycopg.AsyncConnection.connect(pg_store.conninfo) as conn:
+        await conn.execute(
+            "INSERT INTO nora_thread_ownership (thread_id, role) VALUES (%s, %s)",
+            (thread, "research"),
+        )
+        await conn.commit()
+    assert await pg_store.claim(thread) == (False, "research")
+    assert await pg_store.owner(thread) == "research"
 
 
-async def test_owner_returns_none_for_unknown_thread(pg_store):
-    """Unclaimed threads have no owner."""
-    assert await pg_store.owner(str(uuid.uuid4())) is None
-
-
-async def test_invalid_role_rejected(pg_store):
-    """The store validates role names."""
-    with pytest.raises(Exception):
-        await pg_store.claim(str(uuid.uuid4()), "invalid-role")
-
-
-async def test_setup_is_idempotent(pg_store):
-    """Running setup on an already-initialized store does not fail."""
+async def test_owner_returns_none_and_setup_is_idempotent(pg_store):
     await pg_store.setup()
-    thread = str(uuid.uuid4())
-    assert (await pg_store.claim(thread, "interview")) == (True, "interview")
+    assert await pg_store.owner(str(uuid.uuid4())) is None

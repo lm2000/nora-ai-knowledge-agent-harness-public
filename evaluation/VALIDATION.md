@@ -12,7 +12,7 @@ The September 14, 2026 checks exercise the shared source locally and in an isola
 - The separate real-BGE smoke test downloads the pinned public model, verifies its cache receipt, encodes three fictional documents, imports an embedded Qdrant index and uses the MCP SDK over loopback HTTP. Each of three labeled questions ranks its expected document first: Hit@1, Hit@5 and MRR@5 are 1.0.
 - The retained Google Cloud foundation tests exercise configuration, offline plans and mocked resource checks; they create no cloud resources.
 - The UI has server-boundary tests, a TypeScript check and a production build without a credential file. Browser interaction is checked against a synthetic backend.
-- Documentation links, anchors, diagram inventory, rendered Mermaid and source-release paths are checked. Python wheel/source distributions and the explicit public source archive are inspected for their intended contents.
+- Documentation links, anchors, diagram inventory, HTML/GIF pairs and source-release paths are checked. Python wheel/source distributions and the explicit public source archive are inspected for their intended contents.
 
 The source-refactor pass completed 80 Python tests, 11 cloud-planning subtests and three UI tests, including validation from a freshly extracted source archive and installed wheel. The public tests and [smoke script](../scripts/synthetic_smoke.py) are the reproduction entrypoints.
 
@@ -75,4 +75,3 @@ This isolated checkout completes and reviews the first end-to-end slice of the D
 
 - Docker Compose runtime integration for the four-job/BGE/activation slice was exercised end-to-end on macOS with deterministic doubles; the previously passed ARM Linux five-service trial remains evidence for that stack.
 - Real GCS bucket creation, credentials and upload are not exercised; local verification uses the `FakeGCSClient` double.
-- Per-role runtime containers and UI routing for Research Assistant and Interview Analyst, automatic balanced provider routing across Ollama Cloud and Fireworks.ai, and role/thread checkpoint isolation remain accepted implementation scope, not newly deferred future candidates.

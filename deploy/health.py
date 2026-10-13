@@ -1,20 +1,16 @@
 """Container readiness using only the Python standard library."""
 
-import os
 import sys
 from urllib.request import Request, urlopen
 
 from nora.config import credential
 
 service = sys.argv[1]
-role_ports = {"knowledge": 8000, "research": 8003, "interview": 8004}
-role = os.environ.get("NORA_ROLE", "knowledge")
-ports = {"retrieval": 8001, "coordination": 8000, "bge": 8002, "role": role_ports.get(role, 8000)}
+ports = {"retrieval": 8001, "coordination": 8000, "bge": 8002}
 keys = {
     "retrieval": "MCP_TOKEN",
     "coordination": "INTERNAL_TOKEN",
     "bge": "BGE_TOKEN",
-    "role": "INTERNAL_TOKEN",
 }
 port = ports[service]
 key = keys[service]

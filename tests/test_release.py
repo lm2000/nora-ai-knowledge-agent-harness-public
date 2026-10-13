@@ -61,3 +61,15 @@ def test_case_insensitive_collision_is_rejected(source):
     (source / "release-manifest.json").write_text(json.dumps({"files": ["README.md", "readme.md"]}))
     with pytest.raises(ValueError, match="case-insensitive"):
         release.sources(source)
+
+
+def test_allowlisted_gif_is_preserved_as_binary(source):
+    # Binary previews cannot be decoded as UTF-8; the release keeps their bytes.
+    raw = b"GIF89a\x01\x00\x01\x00\x80\x00\x00\xff\x00\x00;"
+    (source / "preview.gif").write_bytes(raw)
+    manifest = {"files": ["README.md", "public-docs.json", "preview.gif"]}
+    (source / "release-manifest.json").write_text(json.dumps(manifest))
+    assert release.sources(source)["preview.gif"] == raw
+    (source / "preview.gif").write_bytes(b"not a GIF")
+    with pytest.raises(ValueError, match="Invalid GIF"):
+        release.sources(source)

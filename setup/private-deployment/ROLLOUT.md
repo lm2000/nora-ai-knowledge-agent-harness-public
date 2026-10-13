@@ -4,14 +4,17 @@
 
 For a fresh host, follow the single shared setup procedure. For an existing host, preserve its working release and data first, then validate the new source on a separate target before changing the running installation.
 
-```mermaid
-flowchart LR
-    source[Source snapshot] --> target[Fresh target]
-    target --> data[Prepare and import]
-    data --> check[Verify services]
-    check --> trial[Conversation trial]
-    trial --> restore[Restore trial]
-```
+The private candidate reached a dated retained-corpus cutover after this general procedure was written. See [status](STATUS.md) for the verified scope; use the maintainer's private host runbook for exact current commands, routes, mounts and backups. Do not infer a fresh-host acceptance from the existing-host cutover.
+
+![Private rollout](../../architecture/diagrams/private-rollout.gif)
+
+[Local browser version](../../architecture/diagrams/private-rollout.html)
+
+## Selected existing-host update
+
+The 2026-10-02 target updates the existing NIS deployment after documentation and application changes. Run one assistant with embedded FastMCP and a separate LiteLLM gateway, retaining Retrieval, BGE, Qdrant and PostgreSQL. No new host or old-chat migration is required. Current assistant chats continue. Legacy role history remains stored without migration or exposure through the assistant.
+
+First check ordinary question/follow-up behavior, a separate new chat, a useful error and persistence of those new chats after a normal restart. Connect Codex first, then OpenClaw, through both direct and gateway MCP paths. Record actual deployment and client evidence in [status](STATUS.md). Clean-host recovery and repeated quality/latency/cost benchmarking remain [later roadmap work](../../Plan.md); the general procedure below is reference guidance, not a prerequisite for this slice or new acceptance evidence.
 
 ## Acceptance
 

@@ -1,0 +1,11 @@
+model_list: []
+mcp_servers:
+  nis:
+    url: os.environ/NIS_MCP_URL
+    transport: http
+    auth_type: bearer_token
+    auth_value: os.environ/NIS_UPSTREAM_TOKEN
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+litellm_settings:
+  telemetry: false

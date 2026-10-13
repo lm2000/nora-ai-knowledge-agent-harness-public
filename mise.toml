@@ -1,0 +1,4 @@
+[env]
+_.path = ['{{ exec(command="conda info --base") }}/envs/nora-ai/bin']
+CONDA_DEFAULT_ENV = "nora-ai"
+CONDA_PREFIX = '{{ exec(command="conda info --base") }}/envs/nora-ai'

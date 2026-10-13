@@ -1,9 +1,16 @@
-# macOS and editor state
+# macOS and editor/IDE state
 .DS_Store
+.AppleDouble
+.LSOverride
+*.icloud
 .obsidian/
 .smart-env/
 .claudian/
 .firecrawl/
+.idea/
+.makemd/
+.space/
+*.code-workspace
 
 # Python environments and caches
 **/.venv/
@@ -87,3 +94,4 @@ setup/google-cloud/plan-output/*.txt
 **/*.egg-info/
 **/*.tsbuildinfo
 .verification/
+.pnpm-store/

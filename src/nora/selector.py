@@ -25,7 +25,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from pydantic import Field
 
 from nora.config import ConfigurationError
-from nora.providers import ProviderSpec, ProviderUnavailable, build_model
+from nora.providers import ProviderSpec, ProviderUnavailable, build_model, credential_available
 
 logger = logging.getLogger(__name__)
 
@@ -126,9 +126,23 @@ class RoleSelectorModel(BaseChatModel):
             else str(last.content if last else "")
         )
         min_tier, tags = _task_requirements(prompt)
-        eligible = _eligible(self.specs, min_tier, tags)
+        routable = self.specs
+        missing = [spec for spec in routable if not credential_available(spec)]
+        for spec in missing:
+            logger.info(
+                "Skipping %s/%s: provider credential %s is not configured",
+                spec.provider,
+                spec.model,
+                spec.token_name,
+            )
+        routable = [spec for spec in routable if credential_available(spec)]
+        if not routable:
+            raise ProviderUnavailable(
+                "No role model has a configured provider credential; failing before routing"
+            )
+        eligible = _eligible(routable, min_tier, tags)
         if not eligible:
-            eligible = self.specs[:]  # Degrade to the full inventory rather than fail.
+            eligible = routable[:]  # Degrade to the viable inventory rather than fail.
         eligible.sort(
             key=lambda spec: _score(spec, min_tier, tags, self.cost_weight, self.latency_weight)
         )

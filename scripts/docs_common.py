@@ -13,8 +13,16 @@ def load_manifest(root=ROOT):
     data = json.loads((root / "public-docs.json").read_text(encoding="utf-8"))
     docs = data["documents"]
     supporting = data.get("supporting_files", [])
+    excluded = data.get("excluded_documents", [])
     if not docs or len(docs + supporting) != len(set(docs + supporting)):
         raise ValueError("Manifest must list a nonempty, unique set of files")
+    if len(excluded) != len(set(excluded)) or set(excluded) & set(docs + supporting):
+        raise ValueError("Excluded documents must be unique and outside the public files")
+    if any(
+        not name.endswith(".md") or Path(name).is_absolute() or ".." in Path(name).parts
+        for name in excluded
+    ):
+        raise ValueError("Excluded documents must be relative Markdown files")
     for name in docs + supporting:
         path = Path(name)
         if path.is_absolute() or ".." in path.parts or any(p.startswith(".") for p in path.parts):
@@ -26,6 +34,8 @@ def load_manifest(root=ROOT):
             raise ValueError(f"File resolves outside repository: {name}")
     if any(not name.endswith(".md") for name in docs):
         raise ValueError("The documents list must contain Markdown files")
+    # Excluded pages are tracked in the private checkout but absent from the
+    # allowlisted public archive, so they need no existence check here.
     # Catch a newly added public Markdown page accidentally omitted from checks.
     inventory = subprocess.run(
         ["git", "-C", str(root), "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
@@ -40,7 +50,7 @@ def load_manifest(root=ROOT):
             if name.endswith(".md") and (root / name).is_file()
         }
         drawings = {name for name in supporting if name.endswith(".excalidraw.md")}
-        unlisted = active - set(docs) - drawings
+        unlisted = active - set(docs) - drawings - set(excluded)
         if unlisted:
             raise ValueError(f"Markdown files outside public manifest: {sorted(unlisted)}")
     return data

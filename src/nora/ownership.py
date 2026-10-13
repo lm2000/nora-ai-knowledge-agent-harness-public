@@ -1,25 +1,16 @@
-"""Global thread ownership claims across role runtimes.
-
-A client-visible thread id is owned by the first role runtime that claims it.
-Subsequent attempts by a different role to ask, read, resume, or export the
-same id are denied.  Legacy un-namespaced Knowledge checkpoints are treated as
-Knowledge-owned when first accessed.
-"""
+"""Preserve stored ownership while admitting only assistant conversations."""
 
 import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
-from nora.config import ConfigurationError
-from nora.roles import valid_role
-
 
 class OwnershipStore(ABC):
-    """Claim and query the owning role for a client-visible thread id."""
+    """Claim assistant conversations without changing historical owners."""
 
     @abstractmethod
-    async def claim(self, thread_id: str, role: str) -> tuple[bool, str]:
-        """Try to claim thread_id for role.
+    async def claim(self, thread_id: str) -> tuple[bool, str]:
+        """Claim thread_id for the assistant; historical owners remain excluded.
 
         Returns (accepted, owner).  accepted is True when the caller won or
         already owns the claim; owner is the current owner after the call.
@@ -27,7 +18,7 @@ class OwnershipStore(ABC):
 
     @abstractmethod
     async def owner(self, thread_id: str) -> str | None:
-        """Return the owning role, or None if the id has never been claimed."""
+        """Return the stored owner, or None if the id has never been claimed."""
 
 
 @dataclass
@@ -37,9 +28,8 @@ class InMemoryOwnershipStore(OwnershipStore):
     _claims: dict[str, str] = field(default_factory=dict)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
-    async def claim(self, thread_id: str, role: str) -> tuple[bool, str]:
-        if not valid_role(role):
-            raise ConfigurationError(f"Invalid role: {role}")
+    async def claim(self, thread_id: str) -> tuple[bool, str]:
+        role = "assistant"
         async with self._lock:
             owner = self._claims.get(thread_id)
             if owner is None:
@@ -74,9 +64,8 @@ class PostgresOwnershipStore(OwnershipStore):
                 )
             await conn.commit()
 
-    async def claim(self, thread_id: str, role: str) -> tuple[bool, str]:
-        if not valid_role(role):
-            raise ConfigurationError(f"Invalid role: {role}")
+    async def claim(self, thread_id: str) -> tuple[bool, str]:
+        role = "assistant"
         import psycopg
 
         async with await psycopg.AsyncConnection.connect(self.conninfo) as conn:

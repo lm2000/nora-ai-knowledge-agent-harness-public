@@ -104,7 +104,6 @@ class Settings:
     history_turns: int = 4
     knowledge_call_limit: int = 3
     mcp_allowed_hosts: tuple[str, ...] = ("localhost:*", "127.0.0.1:*", "retrieval:*")
-    role: str = "knowledge"
     # Provider adapter settings
     fireworks_url: str = "https://api.fireworks.ai/inference/v1"
     fireworks_model: str = "accounts/fireworks/models/kimi-k3"
@@ -173,7 +172,6 @@ class Settings:
             bge_timeout=positive_int(e, "NORA_BGE_TIMEOUT", cls.bge_timeout),
             bge_max_batch_size=positive_int(e, "NORA_BGE_MAX_BATCH_SIZE", cls.bge_max_batch_size),
             mcp_allowed_hosts=hosts,
-            role=e.get("NORA_ROLE", cls.role),
             fireworks_url=endpoint(
                 e.get("NORA_FIREWORKS_URL", cls.fireworks_url), "NORA_FIREWORKS_URL"
             ),

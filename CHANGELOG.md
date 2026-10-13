@@ -4,27 +4,18 @@
 
 This page records project milestones. Detailed private operating history and execution receipts are maintained separately.
 
-## 2026-09-14 — Public source candidate and isolated container trial
+## 2026-10-06 — Single-assistant cleanup in progress
 
-- Consolidate duplicate backends and UIs into one installable Python package and one browser application.
-- Add explicit credential/configuration handling, deterministic preparation, validated index imports, shared MCP and routing failure repairs.
-- Supply fictional documents, adapter tests, a real BGE/MCP smoke test and a credential-free UI build.
-- Reorganize public documentation around the application, target guides, evaluation and contribution paths; replace Obsidian-only diagram embeds with editable Mermaid and Excalidraw sources with matching SVG previews.
-- Replace legacy packaging with one Compose configuration and pinned dependency/image references.
-- Build an explicit public source snapshot; preserve private originals and commit history separately.
-- Build both application images and run the five-service stack on ARM Linux with the public fictional documents.
-- Verify four live Ollama question requests, same-conversation context, missing-evidence behavior, restart persistence and PostgreSQL restoration into a fresh volume.
-- Forward UI allowed origins and MCP allowed hosts from Compose environment settings; verify accepted and rejected requests.
-- Document Tailscale as the intended private access path. Access from another device and broader answer quality remain to test.
+Current source guidance is being aligned around one assistant, separate topic chats and backup-first ingestion. Obsolete role interfaces and material are removed without migrating or deleting stored conversations. [The roadmap](Plan.md) owns integration and rollout progress; October 6 bounded client/browser/restart acceptance and the preparation answer passed after verified backups and Coordination/UI deployment.
 
-No production rollout or GitHub publication is included.
+## 2026-10-03 — Conversational client slice accepted
 
-## 2026-09-09 — Repository consolidation
+Bounded Codex and ordinary OpenClaw gateway question/follow-up checks passed. Direct/gateway transport and normal-restart continuity also have dated evidence. These results establish the exercised client paths rather than representative answer quality. [Deployment status](setup/private-deployment/STATUS.md) retains the acceptance limits.
 
-The reference application, architecture, setup guides and evaluation material were consolidated into one project. Documentation and syntax-check tooling were added.
+## 2026-10-02 — One-assistant architecture accepted
 
-## 2026-09-05 — Private reference implementation and experiments
+Selected one assistant, OSS Deep Agents/LangGraph, the incumbent model selector and PostgreSQL topic checkpoints. Embedded FastMCP and a separate LiteLLM gateway share one question/optional-UUID contract. Editable HTML diagrams supply derived GIF previews.
 
-A private single-VM application was implemented around Coordination, Retrieval MCP, Qdrant, PostgreSQL and a CopilotKit/AG-UI interface. Separate document-preparation, embedding and retrieval experiments were recorded.
+## Earlier milestones
 
-Read [evaluation](evaluation/README.md) for experimental scope and [deployment status](setup/private-deployment/STATUS.md) for the current evidence boundary.
+The shared package, browser UI, deterministic preparation, shared BGE and Retrieval MCP, four ingestion jobs and container packaging were consolidated in September 2026. Historical architecture and execution detail remains in Git history and the dated deployment/evaluation records. Licenses and upstream notices remain part of the source.

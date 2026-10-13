@@ -11,7 +11,7 @@ def initialize(directory: Path) -> dict:
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
     directory.chmod(0o700)
     created, retained = [], []
-    for name in ("postgres", "qdrant", "mcp", "internal", "ollama", "bge"):
+    for name in ("postgres", "qdrant", "mcp", "internal", "ollama", "bge", "gateway"):
         path = directory / name
         try:
             descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -24,6 +24,7 @@ def initialize(directory: Path) -> dict:
             retained.append(name)
         else:
             with os.fdopen(descriptor, "w") as output:
-                output.write(secrets.token_hex(32) + "\n" if name != "ollama" else "")
+                prefix = "sk-" if name == "gateway" else ""
+                output.write(prefix + secrets.token_hex(32) + "\n" if name != "ollama" else "")
             created.append(name)
     return {"created": created, "retained": retained, "provider_token": "configure separately"}

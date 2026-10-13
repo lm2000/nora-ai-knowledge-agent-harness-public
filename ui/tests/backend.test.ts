@@ -3,43 +3,28 @@ import {mkdtempSync, writeFileSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import test from 'node:test';
-import {allowedOrigin, backendConfig, boundedBody, conversationId, parseRole} from '../lib/backend.ts';
+import {allowedOrigin, backendConfig, boundedBody, conversationId, backendFetch} from '../lib/backend.ts';
 
 test('credentials are lazy, file-backed and not forwarded through a URL', () => {
   const directory = mkdtempSync(join(tmpdir(), 'nora-test-'));
   try {
     const path = join(directory, 'token');
     writeFileSync(path, 'synthetic-token\n');
-    assert.equal(backendConfig('knowledge', {NORA_INTERNAL_TOKEN_FILE: path}).token, 'synthetic-token');
+    assert.equal(backendConfig({NORA_INTERNAL_TOKEN_FILE: path}).token, 'synthetic-token');
     writeFileSync(path, 'rotated-token');
-    assert.equal(backendConfig('knowledge', {NORA_INTERNAL_TOKEN_FILE: path}).token, 'rotated-token');
-    assert.throws(() => backendConfig('knowledge', {NORA_INTERNAL_TOKEN_FILE: path, NORA_INTERNAL_TOKEN: 'another'}));
-    assert.throws(() => backendConfig('knowledge', {NORA_INTERNAL_TOKEN: 'test', NORA_KNOWLEDGE_URL: 'https://user:pass@example.com'}));
-    assert.throws(() => backendConfig('knowledge', {}));
+    assert.equal(backendConfig({NORA_INTERNAL_TOKEN_FILE: path}).token, 'rotated-token');
+    assert.throws(() => backendConfig({NORA_INTERNAL_TOKEN_FILE: path, NORA_INTERNAL_TOKEN: 'another'}));
+    assert.throws(() => backendConfig({NORA_INTERNAL_TOKEN: 'test', NORA_COORDINATION_URL: 'https://user:pass@example.com'}));
+    assert.throws(() => backendConfig({}));
   } finally { rmSync(directory, {recursive: true}); }
 });
 
-test('role URLs resolve from explicit env or default service name', () => {
-  const env = {
-    NORA_INTERNAL_TOKEN: 'test',
-    NORA_KNOWLEDGE_URL: 'http://coordination:8000',
-    NORA_RESEARCH_URL: 'http://research:8003',
-  };
-  assert.equal(backendConfig('knowledge', env).url, 'http://coordination:8000');
-  assert.equal(backendConfig('research', env).url, 'http://research:8003');
-  assert.equal(backendConfig('interview', env).url, 'http://role-interview:8004');
-  // Backward compatibility: NORA_COORDINATION_URL serves Knowledge.
-  assert.equal(
-    backendConfig('knowledge', {NORA_INTERNAL_TOKEN: 'test', NORA_COORDINATION_URL: 'http://old:8000'}).url,
-    'http://old:8000'
-  );
-});
-
-test('accepted default topology uses coordination for knowledge and role services for others', () => {
-  const env = {NORA_INTERNAL_TOKEN: 'test'};
-  assert.equal(backendConfig('knowledge', env).url, 'http://coordination:8000');
-  assert.equal(backendConfig('research', env).url, 'http://role-research:8003');
-  assert.equal(backendConfig('interview', env).url, 'http://role-interview:8004');
+test('one Coordination URL is explicit or defaults to the service', () => {
+  assert.equal(backendConfig({NORA_INTERNAL_TOKEN: 'test'}).url, 'http://coordination:8000');
+  assert.equal(backendConfig({NORA_INTERNAL_TOKEN: 'test', NORA_COORDINATION_URL: 'https://example.com/'}).url, 'https://example.com');
+  for (const url of ['ftp://example.com', 'https://user:pass@example.com', 'http://example.com?token=x', 'http://example.com#fragment']) {
+    assert.throws(() => backendConfig({NORA_INTERNAL_TOKEN: 'test', NORA_COORDINATION_URL: url}));
+  }
 });
 
 test('origins and conversation IDs are checked', () => {
@@ -59,33 +44,23 @@ test('body limit applies without a content-length header', async () => {
 });
 
 
-test('copilotkit route parses role slug for all roles', () => {
-  assert.equal(parseRole(['knowledge']), 'knowledge');
-  assert.equal(parseRole(['research']), 'research');
-  assert.equal(parseRole(['interview']), 'interview');
-  assert.equal(parseRole(['knowledge', 'agent']), 'knowledge');
-  assert.equal(parseRole(['research', 'agent']), 'research');
-  assert.equal(parseRole(['interview', 'agent']), 'interview');
-  assert.equal(parseRole([]), null);
-  assert.equal(parseRole(['knowledge', 'extra']), null);
-  assert.equal(parseRole(['unknown']), null);
-  assert.equal(parseRole(['knowledge', 'connect']), null);
-});
-
-test('role selection switches backend URL and keeps credentials local', () => {
-  const env = {NORA_INTERNAL_TOKEN: 'test'};
-  assert.equal(backendConfig('knowledge', env).url, 'http://coordination:8000');
-  assert.equal(backendConfig('research', env).url, 'http://role-research:8003');
-  assert.equal(backendConfig('interview', env).url, 'http://role-interview:8004');
-});
-
-test('selected-text transfer requests use the source role backend', () => {
-  // backendFetch is called with the source role; the target is only used by
-  // the client to open a new chat.  Verify the URL follows the role map.
-  const env = {
-    NORA_INTERNAL_TOKEN: 'test',
-    NORA_RESEARCH_URL: 'http://role-research:8003',
-  };
-  const cfg = backendConfig('research', env);
-  assert.equal(cfg.url, 'http://role-research:8003');
+test('backend requests carry server credential and use the single backend', async () => {
+  const originalFetch = globalThis.fetch;
+  const priorToken = process.env.NORA_INTERNAL_TOKEN;
+  const priorURL = process.env.NORA_COORDINATION_URL;
+  process.env.NORA_INTERNAL_TOKEN = 'synthetic-token';
+  process.env.NORA_COORDINATION_URL = 'http://coordination:8000';
+  try {
+    globalThis.fetch = async (url, options) => {
+      assert.equal(url, 'http://coordination:8000/history/11111111-1111-4111-8111-111111111111');
+      assert.equal((options?.headers as Record<string, string>).Authorization, 'Bearer synthetic-token');
+      assert.equal(options?.cache, 'no-store');
+      return Response.json({messages: []});
+    };
+    assert.equal((await backendFetch('/history/11111111-1111-4111-8111-111111111111')).status, 200);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (priorToken === undefined) delete process.env.NORA_INTERNAL_TOKEN; else process.env.NORA_INTERNAL_TOKEN = priorToken;
+    if (priorURL === undefined) delete process.env.NORA_COORDINATION_URL; else process.env.NORA_COORDINATION_URL = priorURL;
+  }
 });

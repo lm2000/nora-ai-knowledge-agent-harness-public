@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 export async function GET(request: Request) {
   if (!allowedOrigin(request)) return new Response('Forbidden', {status: 403});
   try {
-    const response = await backendFetch('knowledge', '/health', request, 3000);
+    const response = await backendFetch('/health', request, 3000);
     if (!response.ok) throw new Error('Backend is not ready');
     const health = await response.json();
     const documents = Number.isSafeInteger(health.documents) && health.documents >= 0 ? health.documents : 0;

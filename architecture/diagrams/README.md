@@ -1,30 +1,67 @@
 # Editable architecture diagrams
 
-These four views explain the selected target in [D167](../../Decisions.md#selected-target-separate-runtime-and-job-containers) and [D169](../../Decisions.md#accepted-implementation-choices-from-the-architecture-review). They distinguish current behavior from target packaging and roles; they do not claim a new deployment.
+These views explain the accepted [one-assistant target](../../Decisions.md#selected-target-one-assistant-with-a-gateway-backed-mcp-entrance), current reference deployment and separate manual ingestion workflow. For example, the conversation views show a new topic UUID passing through the gateway or direct FastMCP entrance into NIS. The core entrance is implemented and running in the dated private candidate; optional diagram paths remain target views and [current source and deployment evidence](../../setup/containers/README.md#current-implementation) remains separate.
 
-| View | Editable source | Matching preview |
-| --- | --- | --- |
-| System architecture | [01 — Nora target architecture](01-system-architecture.excalidraw.md) | [SVG](01-system-architecture.svg) |
-| Conversation | [02 — From question to answer](02-question-to-answer.excalidraw.md) | [SVG](02-question-to-answer.svg) |
-| Ingestion | [03 — Manual knowledge ingestion](03-manual-ingestion.excalidraw.md) | [SVG](03-manual-ingestion.svg) |
-| Containers and deployment | [04 — Container boundaries](04-deployment-views.excalidraw.md) | [SVG](04-deployment-views.svg) |
+Maintain one HTML file with inline SVG as the editable source and one GIF derived from it. Open the HTML locally in a browser to use its interactive view; a repository HTML link displays source. Regenerate and visually inspect its GIF whenever the HTML changes. Separate SVG, Excalidraw and Mermaid files are not maintained.
 
-Open the `.excalidraw.md` source with Obsidian's Excalidraw plugin or the Codex local Excalidraw preview. Shapes, text and arrows are editable. Each SVG is an export of its matching source.
+## Refresh a GIF
 
-Blue and purple boxes represent persistent application/role containers; teal represents database containers; dashed amber boxes are temporary manual-job containers. Gray boxes identify storage or external services, explicitly labeled. Dashed role routes indicate planned integration; sequence return arrows are also dashed and point back to their caller.
+From the repository root, with Playwright, Chromium and FFmpeg available:
 
-Knowledge Assistant behavior exists. Research Assistant and Interview Analyst are accepted implementation scope after repository preparation. Per-role configuration, automatic balanced routing, the dedicated GCS bucket, the shared BGE API and four worker containers differ from [current Compose](../../compose.yaml). Exact resource limits and role isolation remain implementation work. [The service inventory](../../setup/containers/README.md) owns the complete comparison.
+```bash
+node scripts/export_diagrams.cjs 01-system-architecture
+```
 
-![System architecture](01-system-architecture.svg)
+Expected result: the matching GIF is regenerated from thirty frames of its actual HTML view. Omit the stem to export all pairs. `NODE_PATH` can point to an existing Playwright installation; `NIS_BROWSER_EXECUTABLE` and `NIS_FFMPEG` can select existing executables. These are operator-specific runtime paths, not repository defaults. Temporary capture frames are removed after export.
 
-![Conversation sequence](02-question-to-answer.svg)
+## System architecture
 
-![Manual ingestion pipeline](03-manual-ingestion.svg)
+![System architecture](01-system-architecture.gif)
 
-![Container and deployment boundaries](04-deployment-views.svg)
+[Local browser version](01-system-architecture.html)
 
-The conversation view shows one optional tool cycle; further calls remain bounded. Checkpoints belong to the whole conversation lifecycle. Ingestion owns independent job results and never starts from a question. Both Retrieval and batch embedding call shared BGE; batch concurrency must preserve interactive capacity.
+## Question to answer
 
-Sources: [architecture](../Architecture%20Concept.md), [manual workflow](../../workflows/ingestion/README.md), [roles](../../agents/README.md), [service inventory](../../setup/containers/README.md), and [roadmap](../../Plan.md).
+![Question to answer](02-question-to-answer.gif)
 
-The root README retains its simpler conceptual [conversation](conversation.svg) and [ingestion](manual-ingestion.svg) illustrations, with editable [conversation](conversation.excalidraw.md) and [ingestion](manual-ingestion.excalidraw.md) sources. Those conceptual views do not specify container placement; the four views above own the selected boundaries.
+[Local browser version](02-question-to-answer.html)
+
+## Conceptual conversation
+
+![Conceptual conversation](conversation.gif)
+
+[Local browser version](conversation.html)
+
+## Knowledge-update overview
+
+![Conceptual ingestion](manual-ingestion.gif)
+
+[Local browser version](manual-ingestion.html)
+
+## Request path
+
+![Request path](architecture-request-path.gif)
+
+[Local browser version](architecture-request-path.html)
+
+## Service inventory
+
+![Service inventory](container-service-inventory.gif)
+
+[Local browser version](container-service-inventory.html)
+
+## Selected rollout and later recovery
+
+![Selected rollout and later recovery](private-rollout.gif)
+
+[Local browser version](private-rollout.html)
+
+## Operator knowledge update
+
+![Five-step knowledge update with database backups](ingestion-workflow.gif)
+
+[Local browser version](ingestion-workflow.html)
+
+The conversation path owns execution and PostgreSQL checkpoints. Ingestion owns independent job reports and starts only on an operator command. Retrieval and batch embedding share BGE; the index and prepared documents advance together. The dedicated GCS deployment and local retained-corpus route remain distinct.
+
+Sources: [architecture](../Architecture%20Concept.md), [assistant](../../agents/README.md), [service inventory](../../setup/containers/README.md), [manual workflow](../../workflows/ingestion/README.md) and [roadmap](../../Plan.md).

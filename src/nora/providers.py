@@ -40,6 +40,20 @@ def _token_for(spec: ProviderSpec, *, required: bool = False) -> str | None:
     return credential(spec.token_name, required=required)
 
 
+def credential_available(spec: ProviderSpec) -> bool:
+    """Probe whether this spec's provider credential is configured.
+
+    Providers without a required credential must not enter routing, or an
+    operator misconfiguration turns into a request failure when they are the
+    only capability-eligible candidate.
+    """
+    try:
+        _token_for(spec, required=spec.provider != "ollama")
+    except ConfigurationError:
+        return False
+    return True
+
+
 def build_ollama(spec: ProviderSpec, timeout: int) -> BaseChatModel:
     """Native Ollama protocol adapter."""
     token = _token_for(spec, required=False)

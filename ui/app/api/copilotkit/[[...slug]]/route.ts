@@ -1,25 +1,25 @@
 import {CopilotRuntime, createCopilotRuntimeHandler} from '@copilotkit/runtime/v2';
 import {LangGraphHttpAgent} from '@copilotkit/runtime/langgraph';
-import {allowedOrigin, backendConfig, backendFetch, boundedBody, conversationId, ROLES, type Role} from '../../../../lib/backend';
+import {allowedOrigin, backendConfig, backendFetch, boundedBody, conversationId} from '../../../../lib/backend';
 
 export const runtime = 'nodejs';
 
-function createHandler(role: Role) {
-  const {url, token} = backendConfig(role);
-  const copilotRuntime = new CopilotRuntime({agents: {[role]: new LangGraphHttpAgent({
-    url: url + '/agent', headers: {Authorization: `Bearer ${token}`, 'X-Nora-Role': role},
+function createHandler() {
+  const {url, token} = backendConfig();
+  const copilotRuntime = new CopilotRuntime({agents: {assistant: new LangGraphHttpAgent({
+    url: url + '/agent', headers: {Authorization: `Bearer ${token}`},
   })}});
-  return createCopilotRuntimeHandler({runtime: copilotRuntime, basePath: `/api/copilotkit/${role}`});
+  return createCopilotRuntimeHandler({runtime: copilotRuntime, basePath: "/api/copilotkit"});
 }
 
 async function handle(request: Request) {
   if (!allowedOrigin(request)) return new Response('Forbidden', {status: 403});
   const pathname = new URL(request.url).pathname;
   const segments = pathname.replace(/^\/api\/copilotkit\/?/, '').split('/').filter(Boolean);
-  const role = segments[0] && ROLES.includes(segments[0] as Role) ? (segments[0] as Role) : null;
-  if (!role) return new Response('Invalid role', {status: 400});
+  if (segments.length && !['info', 'agent'].includes(segments[0])) return new Response('Not found', {status: 404});
+  if (segments[0] === 'agent' && segments[1] !== 'assistant') return new Response('Not found', {status: 404});
   try {
-    if (request.method === 'POST' && pathname.endsWith(`/agent/${role}/connect`)) {
+    if (request.method === 'POST' && pathname === '/api/copilotkit/agent/assistant/connect') {
       const bytes = await boundedBody(request);
       const text = new TextDecoder().decode(bytes);
       const data = JSON.parse(text);
@@ -28,7 +28,7 @@ async function handle(request: Request) {
       }
       let messages: unknown[] = [];
       try {
-        const saved = await backendFetch(role, '/history/' + role + '/' + data.threadId, request);
+        const saved = await backendFetch('/history/' + data.threadId, request);
         if (saved.ok) {
           const history = await saved.json() as {messages?: unknown[]};
           messages = history.messages || [];
@@ -51,7 +51,7 @@ async function handle(request: Request) {
       request = new Request(request.url, {method: request.method, headers: request.headers,
         body: text, signal: request.signal});
     }
-    return await createHandler(role)(request);
+    return await createHandler()(request);
   } catch (error) {
     if (error instanceof RangeError) return new Response('Request too large', {status: 413});
     if (error instanceof SyntaxError) return new Response('Invalid JSON', {status: 400});

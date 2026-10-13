@@ -35,34 +35,22 @@ def test_conversion_adapter_preserves_source_and_refuses_overwrite(tmp_path):
     assert adapter.convert.call_count == 1
 
 
-def test_serve_role_sets_nora_role_env(monkeypatch):
-    """The --role argument must reach the factory app via NORA_ROLE."""
+def test_serve_coordination_uses_single_assistant_factory(monkeypatch):
     captured = {}
 
-    def fake_uvicorn_run(app, factory, host, port):
-        captured["app"] = app
-        captured["host"] = host
-        captured["port"] = port
-        captured["role_env"] = __import__("os").environ.get("NORA_ROLE")
+    def run(app, **kwargs):
+        captured.update(app=app, **kwargs)
 
-    monkeypatch.setattr("uvicorn.run", fake_uvicorn_run)
-    monkeypatch.delenv("NORA_ROLE", raising=False)
-    assert main(["serve", "role", "--role", "research"]) == 0
-    assert captured["port"] == 8003
-    assert captured["role_env"] == "research"
+    monkeypatch.setattr("uvicorn.run", run)
+    assert main(["serve", "coordination"]) == 0
     assert captured["app"] == "nora.coordination:create_app"
+    assert captured["port"] == 8000
+    assert captured["log_config"]["loggers"]["nora"]["level"] == "INFO"
 
 
-def test_serve_role_defaults_to_nora_role_env(monkeypatch):
-    """Without --role, the runtime uses NORA_ROLE from the environment."""
-    captured = {}
-
-    def fake_uvicorn_run(app, factory, host, port):
-        captured["port"] = port
-        captured["role_env"] = __import__("os").environ.get("NORA_ROLE")
-
-    monkeypatch.setattr("uvicorn.run", fake_uvicorn_run)
-    monkeypatch.setenv("NORA_ROLE", "interview")
-    assert main(["serve", "role"]) == 0
-    assert captured["port"] == 8004
-    assert captured["role_env"] == "interview"
+@pytest.mark.parametrize(
+    "args", [["serve", "role"], ["serve", "coordination", "--role", "research"]]
+)
+def test_removed_role_cli_is_rejected(args):
+    with pytest.raises(SystemExit):
+        main(args)

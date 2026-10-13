@@ -4,10 +4,16 @@
 
 For example, a host can change its answer provider and collection through environment variables while running the same application package. Nora reads settings when a service or CLI command starts; importing a module does not load weights, credentials or clients.
 
+
+## Accepted target and current interfaces
+
+These settings configure the single assistant, shared retrieval and manual ingestion jobs. Embedded FastMCP and LiteLLM expose the same question/optional-UUID contract. [Deployment status](private-deployment/STATUS.md) records actual running images and acceptance; [the roadmap](../Plan.md) tracks current cleanup and quality work.
+
 ## Paths and endpoints
 
 | Variable | Default outside Compose | Purpose |
 | --- | --- | --- |
+| `NORA_COORDINATION_URL` | `http://coordination:8000` in Compose | UI server target for the single assistant |
 | `NORA_DATA_DIR` | `.runtime/releases/current` | Active prepared release, including `docs/`, `import/` and `coverage.json` |
 | `NORA_STATE_DIR` | `.runtime/state` | SQLite daily request counter |
 | `NORA_MODEL_PATH` | `.runtime/models/bge` | Verified local BGE cache |
@@ -28,30 +34,26 @@ For example, a host can change its answer provider and collection through enviro
 | `NORA_GCS_PUBLISHER_CREDENTIALS_FILE` | Unset | Path to the publisher's explicit ADC credential file; required for GCS activation |
 | `NORA_MCP_ALLOWED_HOSTS` | `localhost:*,127.0.0.1:*,retrieval:*` | HTTP Host values accepted by MCP |
 
-The operator command `nora knowledge-update` writes releases under the parent of `NORA_DATA_DIR` and updates the `current` symlink there. Retrieval resolves `current` on each request, so activation takes effect without restarting the service.
+The operator command `nora knowledge-update` writes releases under the parent of `NORA_DATA_DIR` and updates the `current` symlink there. Pointer-following Retrieval resolves `current` on each request. A literal `NORA_DATA_DIR` release pin needs an explicit deployment change; see [activation](../workflows/ingestion/README.md#backups-and-activation).
 
 Compose sets container paths and service DNS names. Host addresses and resource names are configuration, not embedded in application code. Only UI port 8080 and Retrieval port 8001 are published, both on loopback.
 
-## Roles and model routing
+## Model routing
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `NORA_ROLE` | `knowledge` | Role served by this runtime (`knowledge`, `research`, `interview`) |
-| `NORA_KNOWLEDGE_MODELS` | built-in defaults | JSON array of candidate models for Knowledge Assistant |
-| `NORA_RESEARCH_MODELS` | built-in defaults | JSON array of candidate models for Research Assistant |
-| `NORA_INTERVIEW_MODELS` | built-in defaults | JSON array of candidate models for Interview Analyst |
+| `NORA_ASSISTANT_MODELS` | built-in defaults | JSON array of candidate models for the assistant |
 | `NORA_FIREWORKS_URL` | `https://api.fireworks.ai/inference/v1` | Fireworks OpenAI-compatible endpoint |
-| `NORA_FIREWORKS_MODEL` | `accounts/fireworks/models/kimi-k3` | Example Fireworks model slug |
-| `NORA_SELECTOR_COST_WEIGHT` | `1.0` | Relative weight for cost in routing decisions |
-| `NORA_SELECTOR_LATENCY_WEIGHT` | `1.0` | Relative weight for latency in routing decisions |
-| `NORA_SELECTOR_LOG` | unset | Optional path for routing decision logs |
+| `NORA_FIREWORKS_MODEL` | `accounts/fireworks/models/kimi-k3` | Example model slug |
+| `NORA_SELECTOR_COST_WEIGHT` | `1.0` | Relative cost weight |
+| `NORA_SELECTOR_LATENCY_WEIGHT` | `1.0` | Relative latency weight |
+| `NORA_SELECTOR_LOG` | unset | Optional hashed-query decision log |
 
-The default model inventory exposes conservative quality/cost/latency assumptions, not measured values. Override `NORA_<ROLE>_MODELS` with a JSON array to change the candidate models, their capability tags and relative weights. The selector filters out models below the task's required quality tier, then sorts by weighted cost and latency.
-
+The inventory contains conservative quality/cost/latency assumptions rather than measured values. Credentialless candidates are skipped, then the selector filters for task capability/quality and compares eligible routes. [Model selection](model-routing.md) owns fallback and evidence limits. There is no role selection setting.
 
 ## Credentials and PostgreSQL
 
-Use `NORA_<NAME>` or `NORA_<NAME>_FILE`, with one source per credential. Names are `QDRANT_KEY`, `MCP_TOKEN`, `INTERNAL_TOKEN`, `POSTGRES_PASSWORD`, `OLLAMA_TOKEN`, `BGE_TOKEN` and optional `FIREWORKS_TOKEN`. Service credentials are required; a provider token may be empty for a local endpoint. Errors identify the setting without printing its value.
+Use `NORA_<NAME>` or `NORA_<NAME>_FILE`, with one source per credential. Names are `QDRANT_KEY`, `MCP_TOKEN`, `INTERNAL_TOKEN`, `POSTGRES_PASSWORD`, `OLLAMA_TOKEN`, `BGE_TOKEN` and optional `FIREWORKS_TOKEN`. Service credentials are required; a provider token may be empty for a local endpoint. Errors identify the setting without printing its value. A provider candidate with a missing or empty credential is skipped during routing (see the selector contract above), so a half-configured Fireworks installation degrades to Ollama candidates instead of failing requests.
 
 `nora init` creates owner-only files under `.runtime/secrets`. Compose mounts those files into the services that need them. PostgreSQL's wrapper reads its file before the official entrypoint changes user. UI credentials are read on the server at request time, never during browser compilation.
 
@@ -71,13 +73,13 @@ PostgreSQL uses `NORA_POSTGRES_HOST`, `NORA_POSTGRES_PORT`, `NORA_POSTGRES_DB` a
 
 The counter is atomic across local SQLite connections. It counts requests, including failed attempts, rather than tokens or provider calls. A model retry and optional routing fallback can make multiple inference calls.
 
-Conversation ownership is enforced by a `nora_thread_ownership` table in the shared PostgreSQL database. The first `/ask`, `/agent`, `/history/{role}/{thread_id}` or `/transfer` call for a client-visible thread id atomically claims the id for that role; later attempts from a different role receive 403. Legacy un-namespaced Knowledge checkpoints are treated as Knowledge-owned on first access. The ownership table provides cross-role rejection; PostgreSQL checkpoint namespacing provides data isolation. Distributed locks and provider spending caps are not implemented.
+The existing `nora_thread_ownership` table retains stored owner records. `/ask`, `/agent` and `/history/{thread_id}` use assistant ownership and reject UUIDs already belonging to legacy roles. Checkpoints use `assistant:<UUID>` without a raw legacy fallback. Old role records are retained but not exposed or migrated. Distributed locks and provider spending caps are not implemented.
 
 HTTP bodies are limited to 70 KB before Coordination JSON parsing. The model view is bounded to 48,000 characters, with old turns removed as groups and tool/result pairs retained. Checkpoints keep the complete conversation.
 
 ## Optional routing and GCS
 
-Routing is disabled by default. [Routing reference](model-routing.md) owns its settings and limitations.
+[Model selection](model-routing.md) owns the assistant selector and its limitations.
 
 For local filesystem mode, Retrieval reads full documents from the active release directory under `NORA_RELEASES_ROOT`.
 
@@ -91,4 +93,4 @@ The four-container `scripts/knowledge-update` launcher chooses the activation mo
 
 The UI accepts its loopback origin and the loopback 8080 origins by default. Set `NORA_UI_ALLOWED_ORIGINS` to a comma-separated list that includes an intended additional origin, including its HTTPS scheme and port. Compose forwards this variable to the UI and `NORA_MCP_ALLOWED_HOSTS` to Retrieval; both can be set in `.env`. [Tailscale setup](README.md#private-access-with-tailscale) uses these settings for the selected private access path. They configure origin/host checks, not user login or tenant isolation.
 
-Compose forwards each role’s own `NORA_KNOWLEDGE_MODELS`, `NORA_RESEARCH_MODELS` or `NORA_INTERVIEW_MODELS` inventory, and `NORA_SELECTOR_COST_WEIGHT` / `NORA_SELECTOR_LATENCY_WEIGHT` (both default to 1.0). Nonempty per-role inventory replaces defaults; otherwise `NORA_OLLAMA_URL` / `NORA_OLLAMA_MODEL` and `NORA_FIREWORKS_URL` / `NORA_FIREWORKS_MODEL` select the default endpoints and models.
+Compose forwards `NORA_ASSISTANT_MODELS` and selector weights. A nonempty inventory replaces defaults; otherwise the configured Ollama and Fireworks endpoints/models supply defaults.

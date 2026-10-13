@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Check public Mermaid inventory and Markdown fences without a renderer.
+"""Check public diagram pairs, Mermaid inventory and Markdown fences.
 
 This structural check is dependency-free. It does not parse Mermaid grammar
 or prove visual quality; render changed diagrams separately before review.
 """
 
 import re
+import struct
 import sys
+from pathlib import Path
 
 from docs_common import ROOT, load_manifest, split_fences
 
@@ -31,8 +33,39 @@ def check(root=ROOT):
                 errors.append(f"{name}:{line}: diagram has insufficient content")
             if "%%{init:" in body or "<script" in body.lower():
                 errors.append(f"{name}:{line}: custom executable diagram content")
-    if not actual or actual != expected:
+    if actual != expected:
         errors.append(f"Mermaid inventory differs from public-docs.json: actual={actual}")
+    supporting = set(manifest.get("supporting_files", []))
+    pairs = manifest.get("diagram_pairs", [])
+    listed = []
+    for pair in pairs:
+        source, preview = pair["source"], pair["preview"]
+        listed.extend((source, preview))
+        if source not in supporting or preview not in supporting:
+            errors.append(f"Diagram pair outside supporting inventory: {pair}")
+            continue
+        if (
+            Path(source).suffix != ".html"
+            or Path(preview).suffix != ".gif"
+            or Path(source).with_suffix(".gif").as_posix() != preview
+        ):
+            errors.append(f"Diagram source/preview names differ: {pair}")
+            continue
+        html = (root / source).read_text(encoding="utf-8")
+        if not re.search(r"<svg\b", html, re.I) or not re.search(r"<title\b", html, re.I):
+            errors.append(f"{source}: missing inline SVG or title")
+        if re.search(r'(?:src|href)\s*=\s*["\'](?:https?:)?//', html, re.I):
+            errors.append(f"{source}: external asset dependency")
+        raw = (root / preview).read_bytes()
+        if len(raw) < 14 or raw[:6] not in (b"GIF87a", b"GIF89a") or raw[-1:] != b";":
+            errors.append(f"{preview}: invalid GIF header or trailer")
+        elif not all(struct.unpack("<HH", raw[6:10])):
+            errors.append(f"{preview}: empty GIF dimensions")
+    if len(listed) != len(set(listed)):
+        errors.append("Duplicate diagram source or preview")
+    assets = {name for name in supporting if name.endswith((".html", ".gif"))}
+    if set(listed) != assets:
+        errors.append("HTML/GIF assets differ from diagram_pairs inventory")
     return errors, actual
 
 
@@ -46,7 +79,7 @@ def main():
         print("\n".join(errors))
         return 1
     print(
-        f"Diagram structure OK: {sum(diagrams.values())} Mermaid blocks in {len(diagrams)} public documents. Render validation is separate."
+        f"Diagram structure OK: {len(load_manifest().get('diagram_pairs', []))} HTML/GIF pairs; {sum(diagrams.values())} Mermaid blocks. Render validation is separate."
     )
     return 0
 

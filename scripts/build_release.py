@@ -58,6 +58,12 @@ def sources(root: Path) -> dict[str, bytes]:
         if path.suffix in {".pem", ".key", ".env"} or name.endswith((".pyc", ".tsbuildinfo")):
             raise ValueError("Runtime artifact in release: " + name)
         raw = path.read_bytes()
+        # GIF previews are allowlisted binary assets, checked by check_diagrams.py.
+        if path.suffix == ".gif":
+            if raw[:6] not in (b"GIF87a", b"GIF89a"):
+                raise ValueError("Invalid GIF preview in: " + name)
+            result[name] = raw
+            continue
         text = raw.decode("utf-8")
         if PRIVATE_KEY.search(text) or HOME_PATH.search(text) or TOKEN.search(text):
             raise ValueError("Private path or credential marker in: " + name)

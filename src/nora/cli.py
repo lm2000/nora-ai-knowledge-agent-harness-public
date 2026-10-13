@@ -11,6 +11,21 @@ from pathlib import Path
 from nora.config import Settings, credential
 
 
+def _uvicorn_log_config():
+    """Uvicorn's default log config plus INFO output for application loggers.
+
+    Without this, `nora.*` log records (for example the selector's routing
+    skip notes) are dropped because only Uvicorn's own loggers are configured.
+    """
+    import uvicorn.config
+
+    config = dict(uvicorn.config.LOGGING_CONFIG)
+    loggers = dict(config.get("loggers", {}))
+    loggers["nora"] = {"handlers": ["default"], "level": "INFO", "propagate": False}
+    config["loggers"] = loggers
+    return config
+
+
 def _acceptance_tokenizer():
     """Whitespace tokenizer used only when NORA_ACCEPTANCE_TOKENIZER_DOUBLE is set."""
     import re
@@ -66,6 +81,14 @@ def parser() -> argparse.ArgumentParser:
     job_import = job_commands.add_parser("import", help="Index import/verify job")
     job_import.add_argument("release", type=Path)
 
+    assemble = commands.add_parser(
+        "assemble", help="Add an embedded delta to a base bundle without import or activation"
+    )
+    assemble.add_argument("base", type=Path)
+    assemble.add_argument("delta", type=Path)
+    assemble.add_argument("output", type=Path)
+    assemble.add_argument("--collection", required=True)
+
     update = commands.add_parser(
         "knowledge-update", help="Run the four ingestion jobs and activate a new release"
     )
@@ -88,10 +111,9 @@ def parser() -> argparse.ArgumentParser:
     rollback_cmd.add_argument("--gcs-pointer")
 
     serve = commands.add_parser("serve", help="Start one service in this process")
-    serve.add_argument("service", choices=["retrieval", "coordination", "bge", "role"])
+    serve.add_argument("service", choices=["retrieval", "coordination", "bge"])
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int)
-    serve.add_argument("--role", default="", help="Role for service=role (defaults to NORA_ROLE)")
     evaluate = commands.add_parser(
         "evaluate", help="Run labeled questions through the configured MCP service"
     )
@@ -133,6 +155,10 @@ def main(argv=None) -> int:
             with closing(connect(settings)) as client:
                 function = import_bundle if args.command == "import" else verify_bundle
                 result = function(client, args.collection or settings.collection, args.directory)
+        elif args.command == "assemble":
+            from nora.jobs import assemble_bundle
+
+            result = assemble_bundle(args.base, args.delta, args.output, collection=args.collection)
         elif args.command == "job":
             from nora.bge_client import BGEClient
             from nora.embedding import BGEEncoder
@@ -208,20 +234,7 @@ def main(argv=None) -> int:
                     factory=True,
                     host=args.host,
                     port=args.port or 8002,
-                )
-            elif args.service == "role":
-                role = args.role or settings.role
-                if role not in {"knowledge", "research", "interview"}:
-                    raise ValueError("Set --role or NORA_ROLE to a valid role")
-                # Make the explicit CLI role available to the factory app. Settings is
-                # re-read inside create_app, so the runtime role must be in the environment.
-                os.environ["NORA_ROLE"] = role
-                port = args.port or {"knowledge": 8000, "research": 8003, "interview": 8004}[role]
-                uvicorn.run(
-                    "nora.coordination:create_app",
-                    factory=True,
-                    host=args.host,
-                    port=port,
+                    log_config=_uvicorn_log_config(),
                 )
             else:
                 uvicorn.run(
@@ -229,6 +242,7 @@ def main(argv=None) -> int:
                     factory=True,
                     host=args.host,
                     port=args.port or (8001 if args.service == "retrieval" else 8000),
+                    log_config=_uvicorn_log_config(),
                 )
             return 0
         else:

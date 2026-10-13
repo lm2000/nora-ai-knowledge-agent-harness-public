@@ -3,10 +3,14 @@
 import json
 import os
 import secrets
+import shutil
+import tempfile
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+import numpy as np
 
 from nora.config import Settings
 from nora.conversion import convert as convert_one
@@ -15,7 +19,7 @@ from nora.documents import (
     write_cloud_pointer,
     write_pointer,
 )
-from nora.indexing import connect, import_bundle, verify_bundle
+from nora.indexing import connect, import_bundle, load_bundle, verify_bundle
 from nora.preparation import embed_bundle, prepare_texts
 
 
@@ -169,7 +173,14 @@ def run_import_verify(release_dir: Path, settings: Settings) -> dict:
     """Import an embedded bundle into Qdrant and independently verify it."""
     release_dir = release_dir.resolve()
     embed_report = release_dir / "job-embed.json"
-    if not embed_report.exists():
+    assembly_report = release_dir / "job-assemble.json"
+    if assembly_report.exists():
+        report = json.loads(assembly_report.read_text())
+        if report.get("stage") != "assemble" or report.get("coverage_sha256") != _sha256_file(
+            release_dir / "coverage.json"
+        ):
+            raise ValueError("Assembly stage report does not match the bundle")
+    elif not embed_report.exists():
         raise ValueError("Embed stage did not complete")
     coverage = json.loads((release_dir / "coverage.json").read_text())
     collection = coverage.get("qdrant_collection")
@@ -193,6 +204,118 @@ def run_import_verify(release_dir: Path, settings: Settings) -> dict:
     (release_dir / "job-import.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
+    return report
+
+
+def assemble_bundle(base: Path, delta: Path, output: Path, *, collection: str) -> dict:
+    """Create a separate additive bundle, retaining base rows and vectors without encoding."""
+    base, delta, output = base.resolve(), delta.resolve(), output.resolve()
+    if output.exists():
+        raise FileExistsError("Choose a new output directory for assembly")
+    if any(output.is_relative_to(p) or p.is_relative_to(output) for p in (base, delta)):
+        raise ValueError("Assembly output must be separate from its input bundles")
+    base_coverage, base_rows, base_vectors = load_bundle(base)
+    delta_coverage, delta_rows, delta_vectors = load_bundle(delta)
+    if any(c.get("phase") != "embedded" for c in (base_coverage, delta_coverage)):
+        raise ValueError("Assembly requires embedded input bundles")
+    if not collection.strip() or collection == base_coverage.get("qdrant_collection"):
+        raise ValueError("Choose a separate collection for the assembled bundle")
+    if base_vectors.dtype != delta_vectors.dtype:
+        raise ValueError("Input vector dtypes differ; assembly does not recast vectors")
+
+    base_points = {row["chunk_id"]: i for i, row in enumerate(base_rows)}
+    base_docs = {row["doc_id"] for row in base_rows}
+    delta_docs = {row["doc_id"] for row in delta_rows}
+    shared_docs = base_docs & delta_docs
+    shared_base_ids = {row["chunk_id"] for row in base_rows if row["doc_id"] in shared_docs}
+    shared_delta_ids = {row["chunk_id"] for row in delta_rows if row["doc_id"] in shared_docs}
+    if shared_base_ids != shared_delta_ids:
+        raise ValueError("Identical document hashes have different chunk inventories")
+    additions = []
+    for i, row in enumerate(delta_rows):
+        previous = base_points.get(row["chunk_id"])
+        if previous is not None:
+            if row != base_rows[previous] or not np.array_equal(
+                delta_vectors[i], base_vectors[previous]
+            ):
+                raise ValueError("Conflicting chunk identity, metadata or vector")
+        else:
+            additions.append(i)
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".nora-assemble-", dir=output.parent) as temporary:
+        stage = Path(temporary) / "bundle"
+        (stage / "docs").mkdir(parents=True)
+        (stage / "import").mkdir()
+        for doc_id in sorted(base_docs | delta_docs):
+            source = base if doc_id in base_docs else delta
+            shutil.copyfile(source / "docs" / f"{doc_id}.txt", stage / "docs" / f"{doc_id}.txt")
+        chunk_path = stage / "import/chunks.jsonl"
+        # Preserve base metadata and order, including unknown provenance fields.
+        base_text = (base / "import/chunks.jsonl").read_bytes()
+        with chunk_path.open("wb") as stream:
+            stream.write(base_text)
+            if additions and not base_text.endswith(b"\n"):
+                stream.write(b"\n")
+            for i in additions:
+                stream.write((json.dumps(delta_rows[i]) + "\n").encode())
+        vector_path = stage / "import/vectors.npy"
+        vectors = np.lib.format.open_memmap(
+            vector_path,
+            mode="w+",
+            dtype=base_vectors.dtype,
+            shape=(len(base_rows) + len(additions), base_vectors.shape[1]),
+        )
+        vectors[: len(base_rows)] = base_vectors
+        for start in range(0, len(additions), 256):
+            indices = additions[start : start + 256]
+            vectors[len(base_rows) + start : len(base_rows) + start + len(indices)] = delta_vectors[
+                indices
+            ]
+        vectors.flush()
+        del vectors
+        coverage = {
+            "phase": "embedded",
+            "documents": len(base_docs | delta_docs),
+            "chunks": len(base_rows) + len(additions),
+            "representation": base_coverage["representation"],
+            "qdrant_collection": collection,
+            "chunks_sha256": _sha256_file(chunk_path),
+            "vectors_sha256": _sha256_file(vector_path),
+            "assembly": {
+                "base_documents": len(base_docs),
+                "base_chunks": len(base_rows),
+                "added_documents": len(delta_docs - base_docs),
+                "added_chunks": len(additions),
+                "duplicate_documents": len(shared_docs),
+            },
+        }
+        for source, name in [(base, "base"), (delta, "delta")]:
+            provenance = stage / "provenance" / name
+            provenance.mkdir(parents=True)
+            # Retain original manifests/job reports without inventing missing legacy jobs.
+            for path in [source / "coverage.json", *sorted(source.glob("job-*.json"))]:
+                shutil.copyfile(path, provenance / path.name)
+            if (source / "provenance").is_dir():
+                shutil.copytree(source / "provenance", provenance / "provenance")
+        for path in [stage / "coverage.json", stage / "import/coverage.json"]:
+            path.write_text(json.dumps(coverage, indent=2) + "\n")
+        report = {
+            "stage": "assemble",
+            "base": str(base),
+            "delta": str(delta),
+            "base_coverage_sha256": _sha256_file(base / "coverage.json"),
+            "delta_coverage_sha256": _sha256_file(delta / "coverage.json"),
+            "coverage_sha256": _sha256_file(stage / "coverage.json"),
+            "encoded_chunks": 0,
+            "activated": False,
+            **coverage["assembly"],
+        }
+        (stage / "job-assemble.json").write_text(json.dumps(report, indent=2) + "\n")
+        load_bundle(stage)
+        if output.exists():
+            raise FileExistsError("Output appeared during assembly")
+        os.rename(stage, output)
     return report
 
 
