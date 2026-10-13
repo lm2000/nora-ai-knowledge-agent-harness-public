@@ -119,7 +119,14 @@ class RoleSelectorModel(BaseChatModel):
         return "nora-role-selector"
 
     def _selection(self, messages) -> tuple[str, list[Selection]]:
-        last = next((m for m in reversed(messages) if isinstance(m, HumanMessage)), None)
+        last = next(
+            (
+                m
+                for m in reversed(messages)
+                if isinstance(m, HumanMessage) and m.name != "nora_answer_repair"
+            ),
+            None,
+        )
         prompt = (
             last.content
             if last and isinstance(last.content, str)

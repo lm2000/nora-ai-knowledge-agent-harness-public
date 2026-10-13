@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langgraph.checkpoint.memory import InMemorySaver
 from pydantic import Field
@@ -492,14 +492,16 @@ def test_length_repair_preserves_source_counts_calls_and_removes_draft(tmp_path,
         assert len(model.observed) == 2 + tool_rounds
         assert len(knowledge.calls) == 1 + tool_rounds
         assert len(model.bound) == 1 + tool_rounds
-        assert "exact source title and heading" in str(model.observed[-1][0].content)
+        assert "exact source title and heading" not in str(model.observed[-1][-1].content)
+        assert "Preserve supported facts" in str(model.observed[-1][-1].content)
+        assert model.observed[-1][-1].name == "nora_answer_repair"
         response = client.post(
             "/ask", json={"question": "Next question", "thread_id": thread}, headers=auth
         )
         assert response.status_code == 200, response.text
         assert response.json()["answer"] == "Next"
     assert len(model.observed) == 3 + tool_rounds
-    assert "Revise your preceding answer" not in str(model.observed[-1][0].content)
+    assert all(m.name != "nora_answer_repair" for msgs in model.observed[-1:] for m in msgs)
 
 
 @pytest.mark.parametrize("cap", [True, False])
@@ -660,9 +662,10 @@ def test_combined_preparation_and_length_repair_once_then_topic_reset(tmp_path):
         history = client.get("/history/" + thread, headers=headers).json()["messages"]
         assert history[-1]["content"] == PREPARATION_ANSWER
         assert len(history) == 2
-        repair_prompt = str(model.observed[-1][0].content)
+        repair_prompt = str(model.observed[-1][-1].content)
         assert "source identity and metadata" in repair_prompt
         assert "word limit" in repair_prompt
+        assert model.observed[-1][-1].name == "nora_answer_repair"
         assert len(model.bound) == 1
         response = client.post(
             "/ask",
@@ -997,6 +1000,157 @@ def test_returned_id_read_recovers_title_without_extra_search_or_repair(tmp_path
         "Revise your preceding answer" not in str(msgs[0].content) for msgs in model.observed
     )
     assert "read that hit's returned document ID" in str(model.observed[0][0].content)
+
+
+def test_context_trimming_ignores_repair_message_as_user_turn():
+    from nora.agent import REPAIR_MESSAGE_NAME
+
+    call = AIMessage(content="", tool_calls=[{"name": "read_document", "args": {}, "id": "r"}])
+    tool = ToolMessage(content="x" * 10000, tool_call_id="r")
+    repair_msg = HumanMessage(
+        content="Revise your preceding answer. Preserve supported facts.",
+        name=REPAIR_MESSAGE_NAME,
+    )
+    source = [
+        HumanMessage(content="Old"),
+        AIMessage(content="Old answer"),
+        HumanMessage(content="New"),
+        call,
+        tool,
+        AIMessage(content="Draft"),
+        repair_msg,
+    ]
+    trimmed = bounded_messages(source, 1, 1000)
+    assert len(trimmed) == 5
+    assert [m.name for m in trimmed] == [None, None, None, None, REPAIR_MESSAGE_NAME]
+    assert trimmed[1].tool_calls[0]["id"] == trimmed[2].tool_call_id
+    assert len(tool.content) == 10000 and len(trimmed[2].content) < 1000
+
+
+def test_repair_over_limit_synthetic_instruction_raises_and_preserves_originals():
+    from nora.agent import REPAIR_MESSAGE_NAME
+
+    call = AIMessage(content="", tool_calls=[{"name": "read_document", "args": {}, "id": "r"}])
+    tool = ToolMessage(content="x" * 1000, tool_call_id="r")
+    repair_msg = HumanMessage(content="y" * 1200, name=REPAIR_MESSAGE_NAME)
+    source = [
+        HumanMessage(content="Old"),
+        AIMessage(content="Old answer"),
+        HumanMessage(content="New current question"),
+        call,
+        tool,
+        AIMessage(content="Draft"),
+        repair_msg,
+    ]
+    original = [m.model_copy(deep=True) for m in source]
+    with pytest.raises(ValueError, match="model context limit"):
+        bounded_messages(source, 1, 1000)
+    assert source == original
+
+
+def test_repair_character_pressure_drops_old_turn_retains_current_user_and_tool():
+    from nora.agent import REPAIR_MESSAGE_NAME
+
+    call = AIMessage(content="", tool_calls=[{"name": "read_document", "args": {}, "id": "r"}])
+    tool = ToolMessage(content="x" * 1000, tool_call_id="r")
+    repair_msg = HumanMessage(content="y" * 300, name=REPAIR_MESSAGE_NAME)
+    source = [
+        HumanMessage(content="Old"),
+        AIMessage(content="Old answer" * 100),
+        HumanMessage(content="New current question"),
+        call,
+        tool,
+        AIMessage(content="Draft"),
+        repair_msg,
+    ]
+    original = [m.model_copy(deep=True) for m in source]
+    trimmed = bounded_messages(source, 2, 1000)
+    assert len(trimmed) == 5
+    assert trimmed[0].content == "New current question"
+    assert trimmed[1].tool_calls[0]["id"] == trimmed[2].tool_call_id
+    assert trimmed[-1].name == REPAIR_MESSAGE_NAME
+    assert sum(len(str(m.content)) for m in trimmed) <= 1000
+
+    assert trimmed[-2].content == "Draft"
+    assert source == original
+
+
+def test_repair_request_persistence_and_checkpoint_isolation(tmp_path):
+    import asyncio
+
+    from nora.agent import REPAIR_MESSAGE_NAME
+
+    settings, state, model, _ = length_runtime(
+        tmp_path,
+        [
+            AIMessage(content="too long " * 5),
+            AIMessage(content="Fixed."),
+            AIMessage(content="Next"),
+        ],
+    )
+    thread = str(uuid.uuid4())
+    with TestClient(create_app(settings, state, token="test")) as client:
+        auth = {"Authorization": "Bearer test"}
+        response = client.post(
+            "/ask", json={"question": "At most 2 words", "thread_id": thread}, headers=auth
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["answer"] == "Fixed."
+        history = client.get("/history/" + thread, headers=auth).json()["messages"]
+        assert [m["content"] for m in history] == ["At most 2 words", "Fixed."]
+        assert all("nora_answer_repair" not in str(m) for m in history)
+        repair_request_msgs = model.observed[-1]
+        assert repair_request_msgs[-1].name == REPAIR_MESSAGE_NAME
+        assert isinstance(repair_request_msgs[-2], AIMessage)
+        assert isinstance(repair_request_msgs[0], SystemMessage)
+        assert any(isinstance(m, ToolMessage) for m in repair_request_msgs)
+
+        checkpoint = asyncio.run(
+            state.graph.aget_state({"configurable": {"thread_id": "assistant:" + thread}})
+        )
+        checkpoint_msgs = checkpoint.values.get("messages", [])
+        assert sum(1 for m in checkpoint_msgs if isinstance(m, HumanMessage)) == 1
+        assert all(m.name != REPAIR_MESSAGE_NAME for m in checkpoint_msgs)
+
+        response = client.post(
+            "/ask", json={"question": "Next question", "thread_id": thread}, headers=auth
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["answer"] == "Next"
+    assert all(m.name != REPAIR_MESSAGE_NAME for msgs in model.observed[-1:] for m in msgs)
+
+
+def test_chatollama_serializes_repair_request_as_user_role_no_network(tmp_path):
+    try:
+        from langchain_ollama import ChatOllama
+    except ImportError:
+        pytest.skip("langchain_ollama not installed")
+
+    settings, state, model, _ = length_runtime(
+        tmp_path,
+        [
+            AIMessage(content="too long " * 5),
+            AIMessage(content="Fixed."),
+            AIMessage(content="Next"),
+        ],
+    )
+    thread = str(uuid.uuid4())
+    with TestClient(create_app(settings, state, token="test")) as client:
+        auth = {"Authorization": "Bearer test"}
+        response = client.post(
+            "/ask", json={"question": "At most 2 words", "thread_id": thread}, headers=auth
+        )
+        assert response.status_code == 200, response.text
+        repair_request_msgs = model.observed[-1]
+
+    ollama = ChatOllama(model="gpt-oss:20b", base_url="http://127.0.0.1:1")
+    serialized = ollama._convert_messages_to_ollama_messages(repair_request_msgs)
+    assert serialized[-1]["role"] == "user"
+    assert serialized[-2]["role"] == "assistant"
+    assert serialized[0]["role"] == "system"
+    assert serialized[0]["content"] == str(model.observed[0][0].content)
+    assert "Revise your preceding answer" not in serialized[0]["content"]
+    assert any(msg["role"] == "tool" for msg in serialized)
 
 
 UNTITLED_WORKFLOW = (
@@ -1334,7 +1488,8 @@ def test_automatic_grounding_sequential_exhaustion_and_repair_share_four_models(
         for m in model.observed[2]
         if isinstance(m, ToolMessage) and m.status == "error"
     ] == ["extra-1"]
-    assert "Revise your preceding answer" in str(model.observed[-1][0].content)
+    assert "Revise your preceding answer" in str(model.observed[-1][-1].content)
+    assert model.observed[-1][-1].name == "nora_answer_repair"
     assert len(model.bound) == 3  # The fourth logical call is a tools-disabled repair.
 
 
@@ -1434,8 +1589,167 @@ def test_related_restatement_requires_current_turn_facts(tmp_path, complete_repa
         "Include supported fact: deterministic preparation without summaries or meaning rewrites",
         "Include supported fact: source identity and metadata",
     ]
-    repair_prompt = str(model.observed[-1][0].content)
-    assert "repeat all six supported facts in the current answer" in repair_prompt
+    original_system = str(model.observed[-1][0].content)
+    assert "repeat all six supported facts in the current answer" in original_system
+    assert "Revise your preceding answer" not in original_system
+    repair_msg = model.observed[-1][-1]
+    assert repair_msg.name == "nora_answer_repair"
+    repair_prompt = str(repair_msg.content)
     assert all(d in repair_prompt for d in deficits)
     assert len(model.observed) == 3  # One initial answer, one follow-up, one repair.
     assert len(knowledge.calls) == 2
+
+
+CAPTURED_PREPARATION_INITIAL = (
+    "Nora’s preparation is deterministic and non‑summarizing. It keeps the original file intact, "
+    "extracts readable text, and preserves headings and substantive content. The output contains "
+    "the full text, stable chunk identities, hashes, offsets, and the model configuration used for embedding. "
+    "No summary or meaning‑rewrite is generated. Thus, the surviving information includes the original source, "
+    "headings, substantive text, chunk records, hashes, offsets, and vector‑model metadata.  \n\n"
+    "Source: *Manual ingestion* – “## Processing contract”."
+)
+CAPTURED_PREPARATION_REPAIR = (
+    "Nora’s deterministic preparation keeps the original file unchanged, extracts readable text, "
+    "and preserves headings and substantive content. The output bundle contains the full text, "
+    "source identity and metadata, stable chunk identities, hashes, offsets, and the model configuration "
+    "used for embedding. No summary or meaning rewrite is produced. Chunk offsets are defined by the "
+    "Selected target workflow. The process omits duplicates, empty or unreadable parts, and boilerplate. "
+    "All artifacts are stored for retrieval and rollback. Source: Manual ingestion – Processing contract; "
+    "Selected target workflow."
+)
+CORRECTED_PREPARATION_REPAIR = CAPTURED_PREPARATION_REPAIR.replace(
+    "model configuration used for embedding",
+    "model configuration retained with vectors",
+)
+
+
+def test_preparation_field_retention_repair_replays_initial_and_failed_drafts(tmp_path):
+    settings, state, model, knowledge = preparation_runtime(
+        tmp_path,
+        [
+            AIMessage(content=CAPTURED_PREPARATION_INITIAL),
+            AIMessage(content=CAPTURED_PREPARATION_REPAIR),
+        ],
+    )
+    thread = str(uuid.uuid4())
+    with TestClient(create_app(settings, state, token="test")) as client:
+        headers = {"Authorization": "Bearer test"}
+        response = client.post(
+            "/ask", headers=headers, json={"question": PREPARATION_QUESTION, "thread_id": thread}
+        )
+    assert response.status_code == 503
+    assert "answer" not in response.json()
+    from nora.agent import preparation_deficits
+
+    messages = [
+        HumanMessage(content=PREPARATION_QUESTION),
+        ToolMessage(
+            name="read_document",
+            tool_call_id="manual",
+            content=json.dumps({"title": "Manual ingestion", "text": PREPARATION_ANSWER}),
+        ),
+    ]
+    assert preparation_deficits(messages, CAPTURED_PREPARATION_REPAIR, True) == [
+        "Include supported fact: model configuration with vectors"
+    ]
+    assert len(model.observed) == 2
+    assert len(knowledge.calls) == 1
+    repair_prompt = str(model.observed[-1][-1].content)
+    assert model.observed[-1][-1].name == "nora_answer_repair"
+    assert "Recheck and retain ALL supported requested preservation fields" in repair_prompt
+    assert "model configuration retained with vectors" in repair_prompt
+
+
+def test_preparation_field_retention_repair_succeeds_with_fixed_draft(tmp_path):
+    settings, state, model, knowledge = preparation_runtime(
+        tmp_path,
+        [
+            AIMessage(content=CAPTURED_PREPARATION_INITIAL),
+            AIMessage(content=CORRECTED_PREPARATION_REPAIR),
+        ],
+    )
+    thread = str(uuid.uuid4())
+    with TestClient(create_app(settings, state, token="test")) as client:
+        headers = {"Authorization": "Bearer test"}
+        response = client.post(
+            "/ask", headers=headers, json={"question": PREPARATION_QUESTION, "thread_id": thread}
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["answer"] == CORRECTED_PREPARATION_REPAIR
+        assert len(response.json()["answer"].split()) <= 100
+        history = client.get("/history/" + thread, headers=headers).json()["messages"]
+        assert [m["content"] for m in history] == [
+            PREPARATION_QUESTION,
+            CORRECTED_PREPARATION_REPAIR,
+        ]
+        assert all("nora_answer_repair" not in str(m) for m in history)
+        repair_prompt = str(model.observed[-1][-1].content)
+        assert "Recheck and retain ALL supported requested preservation fields" in repair_prompt
+        assert "model configuration retained with vectors" in repair_prompt
+    assert len(model.observed) == 2
+    assert len(knowledge.calls) == 1
+
+
+def test_unrelated_word_length_repair_does_not_get_preparation_checklist(tmp_path):
+    settings, state, model, knowledge = length_runtime(
+        tmp_path,
+        [
+            AIMessage(content="too many words here are repeated"),
+            AIMessage(content="fixed now"),
+        ],
+    )
+    thread = str(uuid.uuid4())
+    with TestClient(create_app(settings, state, token="test")) as client:
+        headers = {"Authorization": "Bearer test"}
+        response = client.post(
+            "/ask", headers=headers, json={"question": "At most 5 words", "thread_id": thread}
+        )
+        assert response.status_code == 200, response.text
+        repair_prompt = str(model.observed[-1][-1].content)
+        assert model.observed[-1][-1].name == "nora_answer_repair"
+        assert "Recheck and retain ALL supported requested preservation fields" not in repair_prompt
+        assert "Preserve supported facts" in repair_prompt
+        assert "Answer exceeds the requested word limit" in repair_prompt
+    assert len(model.observed) == 2
+    assert len(knowledge.calls) == 1
+
+
+CAPTURED_WHITESPACE_REPAIR = "Nora’s deterministic preparation keeps original files unchanged, preserves source identity and metadata, and retains headings and substantive text without summarizing or rewriting meaning. It extracts readable text, normalizes chunks deterministically, and records stable chunk identities, hashes, and offsets per the Selected\u202fTarget\u202fWorkflow. The process also stores model configuration and associated vectors for each chunk. Retrieval reads full text from the prepared‑full‑documents store, ensuring all original content and metadata survive the ingestion pipeline. Source: Manual ingestion – Processing contract."
+
+
+def heading_guard_messages():
+    return [
+        HumanMessage(content=PREPARATION_QUESTION),
+        ToolMessage(
+            name="read_document",
+            tool_call_id="manual",
+            content=json.dumps({"title": "Manual ingestion", "text": PREPARATION_ANSWER}),
+        ),
+    ]
+
+
+def test_captured_unicode_heading_repair_passes_guard():
+    from nora.agent import preparation_deficits
+
+    assert preparation_deficits(heading_guard_messages(), CAPTURED_WHITESPACE_REPAIR, True) == []
+    assert len(CAPTURED_WHITESPACE_REPAIR.split()) == 79
+
+
+@pytest.mark.parametrize("space", ["\u202f", "\u00a0", "  ", "\t"])
+def test_attribution_headings_accept_equivalent_whitespace(space):
+    from nora.agent import preparation_deficits
+
+    answer = PREPARATION_ANSWER
+    for heading in ["Manual ingestion", "Processing contract", "Selected target workflow"]:
+        answer = answer.replace(heading, heading.replace(" ", space))
+    assert preparation_deficits(heading_guard_messages(), answer, True) == []
+
+
+@pytest.mark.parametrize("replacement", ["chosen pipeline", "Selected targets workflow"])
+def test_missing_or_wrong_workflow_heading_still_rejected(replacement):
+    from nora.agent import preparation_deficits
+
+    answer = CAPTURED_WHITESPACE_REPAIR.replace("Selected\u202fTarget\u202fWorkflow", replacement)
+    assert preparation_deficits(heading_guard_messages(), answer, True) == [
+        "Name Selected target workflow for chunk offsets"
+    ]

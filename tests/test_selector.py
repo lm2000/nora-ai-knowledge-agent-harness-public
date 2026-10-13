@@ -295,6 +295,35 @@ def test_missing_provider_credential_falls_back_to_viable_model(tmp_path, monkey
         nora.selector.build_model = original
 
 
+def test_selector_ignores_repair_message_for_routing(monkeypatch, tmp_path):
+    selector, cheap, strong, orig = _make_selector(monkeypatch)
+    try:
+        # Case 1: Hello + repair architecture/reasoning text (cheap route)
+        repair_msg1 = HumanMessage(
+            content="Revise architecture tradeoffs", name="nora_answer_repair"
+        )
+        result1 = selector.invoke(
+            [HumanMessage(content="Hello"), AIMessage(content="Draft"), repair_msg1]
+        )
+        assert result1.content == "from-cheap"
+        assert cheap.calls == 1 and strong.calls == 0
+
+        # Case 2: architecture tradeoffs + repair Hello (strong route)
+        cheap.calls = 0
+        repair_msg2 = HumanMessage(content="Hello", name="nora_answer_repair")
+        result2 = selector.invoke(
+            [
+                HumanMessage(content="Explain the architecture tradeoffs"),
+                AIMessage(content="Draft"),
+                repair_msg2,
+            ]
+        )
+        assert result2.content == "from-strong"
+        assert cheap.calls == 0 and strong.calls == 1
+    finally:
+        _restore(orig)
+
+
 def test_all_candidates_missing_credentials_fails_clearly(tmp_path, monkeypatch):
     """When every candidate's provider credential is missing, the request fails
     before routing with a clear ProviderUnavailable instead of a build error."""

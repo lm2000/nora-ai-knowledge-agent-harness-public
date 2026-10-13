@@ -22,7 +22,6 @@ from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     RemoveMessage,
-    SystemMessage,
     ToolMessage,
 )
 from langchain_core.tools import tool
@@ -30,6 +29,8 @@ from langchain_core.tools import tool
 from nora.assistant import AssistantConfig, load_assistant_config
 from nora.common import valid_document_id
 from nora.config import Settings
+
+REPAIR_MESSAGE_NAME = "nora_answer_repair"
 
 
 def requested_word_limit(question: str) -> int | None:
@@ -285,6 +286,7 @@ def preparation_deficits(messages, answer: str, attribution: bool) -> list[str]:
             for sentence in gap_sentences
         ):
             deficits.append(f"State evidence gap for: {label}; do not invent it")
+    normalized_attribution = " ".join(answer.lower().split())
     if attribution and not verified_title:
         deficits.append(
             "Requested source title is not verified in retrieved passages; "
@@ -294,12 +296,13 @@ def preparation_deficits(messages, answer: str, attribution: bool) -> list[str]:
         attribution
         and verified_title
         and (
-            "manual ingestion" not in answer.lower() or "processing contract" not in answer.lower()
+            "manual ingestion" not in normalized_attribution
+            or "processing contract" not in normalized_attribution
         )
     ):
         deficits.append("Name Manual ingestion / Processing contract as the requested source")
     if attribution and "chunk identities, hashes and offsets" in supported:
-        if "selected target workflow" not in answer.lower():
+        if "selected target workflow" not in normalized_attribution:
             deficits.append("Name Selected target workflow for chunk offsets")
     return deficits
 
@@ -314,13 +317,16 @@ class AnswerRepairState(AgentState):
 
 
 def bounded_messages(messages, turns: int, character_limit: int = 48000):
-    humans = [index for index, message in enumerate(messages) if isinstance(message, HumanMessage)]
+    def is_real_human(message):
+        return isinstance(message, HumanMessage) and message.name != REPAIR_MESSAGE_NAME
+
+    humans = [index for index, message in enumerate(messages) if is_real_human(message)]
     selected = list(messages[humans[-turns] :]) if len(humans) > turns else list(messages)
     while (
-        len([m for m in selected if isinstance(m, HumanMessage)]) > 1
+        len([m for m in selected if is_real_human(m)]) > 1
         and sum(len(str(m.content)) for m in selected) > character_limit
     ):
-        next_human = next(i for i, m in enumerate(selected[1:], 1) if isinstance(m, HumanMessage))
+        next_human = next(i for i, m in enumerate(selected[1:], 1) if is_real_human(m))
         selected = selected[next_human:]
     # Preserve tool-call/result pairs; shorten their content in the model view only.
     for index, message in enumerate(selected):
@@ -420,7 +426,6 @@ def create_graph(
 
         async def awrap_model_call(self, request, handler):
             tools = [tool for tool in request.tools if getattr(tool, "name", "") in allowed_tools]
-            messages = bounded_messages(request.messages, settings.history_turns)
             if request.state.get("answer_repair"):
                 cap = request.state["answer_word_limit"]
                 length = (
@@ -432,21 +437,34 @@ def create_graph(
                 instruction = (
                     "Revise your preceding answer "
                     + length
-                    + "Keep the same meaning, exact source title and heading, record date and "
-                    "uncertainty about live deployment. Remove repetition and section labels. "
+                    + "Preserve supported facts, valid provenance, dates and uncertainty. "
+                    "Remove repetition and section labels. Correct omissions and wrong source "
+                    "attribution rather than retaining an exact erroneous source title or heading. "
                     "Use only evidence already retrieved. Return only the revised answer; "
-                    "do not request tools. Correct these deficits: "
+                    "do not request tools. "
+                    + (
+                        "Recheck and retain ALL supported requested preservation fields, not only listed deficits: "
+                        "deterministic/no-summary/no-meaning-rewrite; originals; headings/substantive text; "
+                        "source identity/metadata; chunk identities/hashes/offsets; "
+                        "model configuration retained with vectors. "
+                        if request.state.get("preparation_check")
+                        else ""
+                    )
+                    + "Correct these deficits: "
                     + "; ".join(request.state.get("answer_deficits", []))
                 )
-                system = str(request.system_message.content) if request.system_message else ""
+                repair_message = HumanMessage(content=instruction, name=REPAIR_MESSAGE_NAME)
+                messages = bounded_messages(
+                    [*request.messages, repair_message], settings.history_turns
+                )
                 return await handler(
                     request.override(
                         tools=[],
                         tool_choice=None,
                         messages=messages,
-                        system_message=SystemMessage(content=system + "\n\n" + instruction),
                     )
                 )
+            messages = bounded_messages(request.messages, settings.history_turns)
             return await handler(request.override(tools=tools, messages=messages))
 
         @hook_config(can_jump_to=["model"])
