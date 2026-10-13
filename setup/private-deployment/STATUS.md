@@ -83,3 +83,11 @@ Local preparation follow-up correction (2026-10-06): 67 focused tests and saved 
 
 
 Preparation follow-up rollout (2026-10-06): Coordination image `preparation-followup-20261006` / `sha256:ffed46272d5e0798a6308410c8e7cc8f9dcdc29f7fb22346a8da146ecb02684f` is healthy; history/corpus/other services/settings retained. Both fresh Q2 calls failed with HTTP 503; follow-up returned all six facts/attribution at 87/100 words with an unsupported exhaustive opening. Initial first generation exhausted its token limit before repair. Second failure remains undiagnosed after a latest-turn diagnostic mistakenly read the successful follow-up; that boundary deviation is recorded in canonical Operations Guidance. Repeated preparation quality remains unaccepted; no publication or primary sync occurred.
+
+## Request-only repair deployed and checked — 2026-10-13
+
+Coordination now runs the verified request-only repair, six-field preservation guidance and Unicode source-heading comparison. Only agent, assistant and selector modules changed from the preceding image; their hashes match the published repair source. The image-only update preserved all previous Compose overlays, environment values, glm-5.3-flash model inventory and existing context/token/retrieval/model/repair limits. Other service identities were unchanged.
+
+A fresh readable PostgreSQL dump and reverified retained Qdrant/prepared/configuration backups preceded deployment. Health is OK. The existing six-message assistant conversation is unchanged, and corpus counts remain 21,512 documents / 143,123 points. Two fresh saved-gateway questions and a follow-up passed at 71, 79 and 91 words with all six required facts and requested source headings. Saved new histories contain the exact answers and no internal repair instructions. No passing checkpoint traces were read. Rollback is prepared but was not exercised; full restoration and representative quality remain separate.
+
+Coordination image: `nora-candidate-backend:answer-repair-20261013` / `sha256:9d8a3191ac37ad9bdfbe6e240d334c9be7ec6580e023bc7bfa74007df2fe50a7`. This scoped derivative patches three modules; it is not a fresh installation of the whole public package. The prior image is retained for image-only rollback. No ingestion, corpus activation, model-route or other-service change occurred.

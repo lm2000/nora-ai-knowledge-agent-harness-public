@@ -22,6 +22,18 @@ Keep this private single-user integration simple; elaborate access-control and q
 
 ## Unresolved repair outcome
 
+### Verified repair deployment — 2026-10-13
+
+Coordination now runs the verified request-only repair, six-field preservation guidance and Unicode source-heading comparison. Only agent, assistant and selector modules changed from the preceding image; their hashes match the published repair source. The image-only update preserved all previous Compose overlays, environment values, glm-5.3-flash model inventory and existing context/token/retrieval/model/repair limits. Other service identities were unchanged.
+
+A fresh readable PostgreSQL dump and reverified retained Qdrant/prepared/configuration backups preceded deployment. Health is OK. The existing six-message assistant conversation is unchanged, and corpus counts remain 21,512 documents / 143,123 points. Two fresh saved-gateway questions and a follow-up passed at 71, 79 and 91 words with all six required facts and requested source headings. Saved new histories contain the exact answers and no internal repair instructions. No passing checkpoint traces were read. Rollback is prepared but was not exercised; full restoration and representative quality remain separate.
+
+### Production-model isolated compatibility — 2026-10-13
+
+Published repair source was checked in a separate in-memory process using the unchanged deployed Ollama Cloud glm-5.3-flash model spec. Two fresh preparation questions and one related follow-up passed at 67, 74 and 82 words. First turn used one repair; the second and follow-up passed directly. Each used two retrieval calls. Four distinct provider responses were nonempty and normal-stop. Saved-source replay confirms all six fields and requested headings. No passing checkpoint diagnostics were read.
+
+The bounded cloud semantic review passed with a wording limitation: the follow-up's “nothing else is documented” phrase is too absolute because the source also lists full prepared documents and a manifest as artifacts. Required-field acceptance does not establish completeness of all additional artifacts or general reliability. Production container/image/environment and installed-source hashes were unchanged. Application source hashes match published source. No deployment, publication, corpus update or production conversation write occurred. Private evidence: `.private/glm-repair-acceptance-20261013/`.
+
 ### Source release verification — 2026-10-13
 
 The full source checks pass: 245 tests, six skips and 11 subtests. The extracted allowlisted public package passes 244 tests, six skips and 11 subtests; private `tests/test_server.py` is excluded by the manifest. Both source and package pass five UI tests, typecheck, production UI build, lint/format, shell syntax, local links, diagram structure and release scanning. Exact file inventory and all 176 source checksums match. These checks and the bounded acceptance support the source refresh; running services remain separate.
