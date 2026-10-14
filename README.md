@@ -1,6 +1,6 @@
 # Nora Intelligence System — Knowledge & Agent Harness
 
-Nora is a private, self-hosted knowledge assistant. It retrieves relevant passages from a prepared document collection, answers through a Deep Agent, and keeps conversation history in PostgreSQL.
+Nora Intelligence System (NIS) is a private, self-hosted knowledge assistant from Nora SuperIntelligence Lab. It retrieves relevant passages from a prepared document collection, answers through a Deep Agent, and keeps conversation history in PostgreSQL.
 
 **Example:** ask “What still blocks the Atlas release?” Nora finds the fictional Atlas plan and decisions, then answers that the load test and rollback rehearsal remain.
 
@@ -40,7 +40,7 @@ Knowledge updates run separately from conversations: select sources, convert and
 | Repeatable tests and limits | Synthetic contract tests, UI checks, lint, link and release checks are provided |
 | Answer quality | Synthetic smoke passes; representative private evaluation remains open |
 
-The exact evidence boundary is in [Validation](evaluation/VALIDATION.md) and [Private deployment status](setup/private-deployment/STATUS.md). Source implementation does not by itself prove a live rollout. The latest local repair and heading-whitespace correction passed two fresh preparation questions and one follow-up in an isolated Ollama Cloud gpt-oss:20b check on 2026-10-13. Earlier failures and exact source boundaries are retained in the [repair record](Plan.md#unresolved-repair-outcome). The correction was subsequently deployed on the private glm-5.3-flash route; two fresh gateway questions and a follow-up passed at 71, 79 and 91 words, with existing history and corpus counts unchanged. The later named-guide and follow-up correction passed a separate six-case isolated check on 2026-10-13 and awaits deployment. This bounded result does not establish general reliability. Enterprise shared memory across harnesses, Kubernetes/SSO, commercial scale and measured customer AI latency are unimplemented/unverified.
+The exact evidence boundary is in [Validation](evaluation/VALIDATION.md) and [Private deployment status](setup/private-deployment/STATUS.md). Source implementation does not by itself prove a live rollout. The latest local repair and heading-whitespace correction passed two fresh preparation questions and one follow-up in an isolated Ollama Cloud gpt-oss:20b check on 2026-10-13. Earlier failures and exact source boundaries are retained in the [repair record](Plan.md#unresolved-repair-outcome). The correction was subsequently deployed on the private glm-5.3-flash route; two fresh gateway questions and a follow-up passed at 71, 79 and 91 words, with existing history and corpus counts unchanged. The later named-guide and follow-up correction passed a separate six-case isolated check on 2026-10-13. Its October 14 rollout failed two of three selected wording checks and was rolled back to the prior image. This bounded result does not establish general reliability. Enterprise shared memory across harnesses, Kubernetes/SSO, commercial scale and measured customer AI latency are unimplemented/unverified.
 
 ## Run the source
 
