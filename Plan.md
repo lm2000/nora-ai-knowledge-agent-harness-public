@@ -22,6 +22,12 @@ Keep this private single-user integration simple; elaborate access-control and q
 
 ## Unresolved repair outcome
 
+### Quality correction source validation — 2026-10-14
+
+The named-guide selection and scoped follow-up/gap correction passed full source validation: 281 tests, six skips and 11 subtests. Its extracted public package passed 280 tests, six skips and 11 subtests; private test_server.py is outside the public manifest. Both passed five UI tests, typecheck, production build, lint/format, shell syntax, local links, diagram structure and the 176-file release scan. Exact extracted inventory and source checksums match. The source application modules match the earlier six-case isolated acceptance inputs.
+
+The isolated cases were 92/120, 98/120, 70/80, 52/60, 29/30 and 15/20 words. The SLA case establishes an owning-guide read and a gap statement about inspected text; its 8,000-character prefix does not establish absence throughout the entire guide or corpus. Source publication does not deploy this quality correction. The prior request-only repair image remains the recorded running deployment; the named-guide/follow-up correction awaits its own rollout.
+
 ### Verified repair deployment — 2026-10-13
 
 Coordination now runs the verified request-only repair, six-field preservation guidance and Unicode source-heading comparison. Only agent, assistant and selector modules changed from the preceding image; their hashes match the published repair source. The image-only update preserved all previous Compose overlays, environment values, glm-5.3-flash model inventory and existing context/token/retrieval/model/repair limits. Other service identities were unchanged.
@@ -71,7 +77,33 @@ The smallest next local correction is Unicode whitespace normalization for sourc
 
 ### Local source-heading whitespace correction — 2026-10-13
 
-Source-heading attribution now collapses Unicode whitespace before comparing Manual ingestion, Processing contract and Selected target workflow. Returned answer text and preservation-fact checks are unchanged. The exact captured 79-word repair with U+202F narrow no-break spaces passes the actual guard locally; missing and misspelled workflow headings remain rejected. All 114 focused service, selector and assistant tests pass, with changed-file lint/format and a bounded Ollama Cloud review passing. This correction is uncommitted/unpublished and has not been exercised in another live acceptance trial. No deployment or corpus/conversation changes occurred.
+Source-heading attribution now collapses Unicode whitespace before comparing Manual ingestion, Processing contract and Selected target workflow. Returned answer text and preservation-fact checks are unchanged. The exact captured 79-word repair with U+202F narrow no-break spaces passes the actual guard locally; missing and misspelled workflow headings remain rejected. All 114 focused service, selector and assistant tests pass, with changed-file lint/format and a bounded Ollama Cloud review passing. At that local check, the correction was uncommitted/unpublished and had not yet been exercised in another live acceptance trial. No deployment or corpus/conversation changes occurred.
+
+### Varied gateway quality sample — 2026-10-13
+
+Exactly six cases completed within their word caps: preservation/artifacts106/120, related artifact follow-up115/120, missing SLA/retention evidence80/80, same-chat topic change57/60, short operational answer26/30, and short follow-up14/20. Four cases passed the selected checks. Two need attention: the artifact follow-up retains an unsupported exhaustive opening, and the missing-evidence answer names a broader ingestion section rather than establishing the requested owning-guide reference and widens its gap claim to current deployment knowledge. No numeric SLA/retention values were invented.
+
+Production container/image/environment identities were unchanged. No application, prompt, model, deployment or publication change occurred; no extra question or passing checkpoint trace. Three new test conversations were saved. Cases used the already-public ingestion guide; assessment used predefined criteria and visible-answer observations, not an independent full semantic judge or actual retrieved-passage inspection. The saved guide may be older, so this does not establish complete corpus gaps or general reliability. Results were saved in the private quality-sample receipt before proposing any correction.
+
+### Local quality correction proposal — 2026-10-13
+
+A draft proposal addresses unsupported exhaustive artifact follow-up wording and explicit Manual ingestion guide selection for gap questions. The proposed lookup reuses the targeted query/returned-ID/offset-zero read within the existing budget, independently of the six-field preparation check. An offline check confirms the exact SLA question has preparation_scope false; its actual live retrieval trace was not inspected. Proposed examples keep additional artifacts and missing-information statements tied to the passages inspected.
+
+This is a proposal only: no application edit, live question, deployment, model or corpus change. Public code/guide and generic observations were used for cloud drafting; no private excerpt or raw live transcript was exported. Local implementation estimate:20–35minutes; a later six-case check is a separate10–20minute scope. The proposal and receipt are saved in the private quality-correction deliverable.
+
+### Local quality correction implemented — 2026-10-13
+
+The source now targets current questions explicitly naming the Manual ingestion guide with the existing targeted query and returned-ID/offset-zero read. The selection scope stays separate from preparation_check: a named-guide SLA question reads the candidate when available without requiring the six preservation fields. Generic questions and later unrelated topics retain their ordinary search. Candidate/title checks and shared three-retrieval/four-logical-model/one-repair/history/context limits remain unchanged.
+
+Assistant guidance now includes requested artifacts supported by retrieved passages without unsupported exhaustive claims, and confines missing-information wording to the passages inspected. All 150 focused service, selector and assistant tests pass, including actual graph read/budget/reset, broader/missing candidates, current-topic scoping, exact short-answer follow-up and saved-history checks. Lint/format and bounded cloud code review pass. The reviewer incorrectly described the unchanged candidate selector as a title-substring match; it uses exact normalized title matching. No new gateway question, deployment, publication or model/corpus change. At implementation-check time this correction was uncommitted/unpublished; scripted replies do not establish real-model compliance.
+
+### Updated-source isolated six-case check — 2026-10-13
+
+The local quality correction passed all six selected cases on unchanged production glm-5.3-flash configuration in a process-only source overlay with in-memory conversations/ownership. Results: artifacts 92/120 words, artifact follow-up 98/120, named-guide SLA gap 70/80, same-chat topic change 52/60, short operational answer 29/30 and short follow-up 15/20. Each used one distinct nonempty normal-stop model response and no repair. The first five used two retrieval calls; the final unscoped follow-up used one.
+
+The artifact follow-up retains the preservation fields and documents/manifest without the earlier nothing-else claim. The SLA case reads a returned owning-guide ID at offset zero and confines its final gap statement to retrieved text. Its read was the first 8,000 characters with a next offset, so absence across the entire guide/corpus remains unestablished. Actual read metadata establishes the owning guide for this sample; no passing or failed checkpoint traces were read. No additional semantic-review export was performed.
+
+Production container/image/environment identities and installed source hashes were unchanged. Current local module hashes match the tested inputs. No production conversation write, source publication, corpus update, model change or deployment occurred. At this isolated check the correction was uncommitted/unpublished; this is one bounded sample, not general reliability evidence. Private receipt and exact answers are retained in the quality-correction acceptance deliverable.
 
 ## Later work
 

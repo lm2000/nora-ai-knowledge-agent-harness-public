@@ -2,6 +2,7 @@
 
 import json
 import re
+import unicodedata
 import uuid
 from typing import NotRequired
 
@@ -109,6 +110,32 @@ GAP_PATTERN = (
 )
 
 PREPARATION_QUERY = "NIS Manual ingestion Processing contract deterministic preparation"
+
+
+def named_manual_ingestion_scope(query: str) -> bool:
+    """Detect explicit Manual ingestion guide requests naming the source.
+
+    Generic unrelated ingestion queries or a passing manual-ingestion mention
+    without an explicit guide/document/source/heading context remain ordinary
+    search. Scope is derived from the current question only and is not
+    inherited from previous human turns.
+    """
+    normalized = re.sub(r"\s+", " ", unicodedata.normalize("NFKC", query)).strip().lower()
+    if not normalized:
+        return False
+    title = re.search(r"(?<![\w-])manual[\s\u00a0]+ingestion(?![\w-])", normalized)
+    if not title:
+        return False
+    if re.search(r"""["'“”‘’`]\s*manual ingestion\s*["'“”‘’`]""", normalized):
+        return True
+    return bool(
+        re.search(r"\bmanual ingestion (?:guide|document|source|heading)\b", normalized)
+        or re.search(
+            r"\b(?:guide|document|source|heading) (?:named |called |titled )?manual ingestion\b",
+            normalized,
+        )
+        or re.search(r"\b(?:per|under|according to) (?:the )?manual ingestion\b", normalized)
+    )
 
 
 def preparation_document(payload) -> str | None:
@@ -383,7 +410,8 @@ def create_graph(
                 raise ValueError("A user question is required")
             query = last.content if isinstance(last.content, str) else str(last.content)
             scoped = preparation_scope(state["messages"], settings.history_turns)
-            search_query = PREPARATION_QUERY if scoped else query[:1500]
+            named_scope = named_manual_ingestion_scope(query)
+            search_query = PREPARATION_QUERY if scoped or named_scope else query[:1500]
             grounding_messages = []
 
             async def retrieve(operation, arguments):
@@ -401,7 +429,7 @@ def create_graph(
                 return json.loads(result)
 
             result = await retrieve(search_knowledge, {"query": search_query})
-            if scoped and assistant_config.call_limit > 1:
+            if (scoped or named_scope) and assistant_config.call_limit > 1:
                 doc_id = preparation_document(result)
                 if doc_id:
                     await retrieve(read_document, {"doc_id": doc_id, "offset": 0})

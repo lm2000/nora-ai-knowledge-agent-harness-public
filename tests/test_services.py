@@ -1753,3 +1753,255 @@ def test_missing_or_wrong_workflow_heading_still_rejected(replacement):
     assert preparation_deficits(heading_guard_messages(), answer, True) == [
         "Name Selected target workflow for chunk offsets"
     ]
+
+
+NAMED_GUIDE_QUESTION = (
+    'Does the named "Manual ingestion" guide explicitly guarantee a numeric processing '
+    "SLA or exact data retention period? Answer in at most 80 words."
+)
+SLA_ANSWER = "The inspected Manual ingestion passages do not state a numeric processing SLA or exact retention period."
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        NAMED_GUIDE_QUESTION,
+        "According to the 'Manual ingestion' guide, what is the ingestion SLA? Answer in at most 200 words.",
+        "What is the SLA under the Manual ingestion source? Answer in at most 200 words.",
+        'What is the SLA in the "Manual ingestion" document? Answer in at most 200 words.',
+        "What is the SLA in the Manual ingestion heading? Answer in at most 200 words.",
+    ],
+)
+def test_named_manual_ingestion_scope_triggers_automatic_search_and_read(tmp_path, question):
+    from nora.agent import PREPARATION_QUERY, named_manual_ingestion_scope
+
+    assert named_manual_ingestion_scope(question) is True
+    knowledge = PreparationGuideKnowledge([{"doc_id": "a" * 64, "title": "Manual ingestion"}])
+    settings, state, model = guide_runtime(tmp_path, knowledge, [AIMessage(content=SLA_ANSWER)])
+    with TestClient(create_app(settings, state, token="test")) as client:
+        response = client.post(
+            "/ask",
+            headers={"Authorization": "Bearer test"},
+            json={"question": question},
+        )
+    assert response.status_code == 200, response.text
+    assert knowledge.calls == [
+        ("search", {"query": PREPARATION_QUERY}),
+        ("read", {"doc_id": "a" * 64, "offset": 0}),
+    ]
+    assert len(model.observed) == 1
+    assert response.json()["answer"] == SLA_ANSWER
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How does NIS ingest PDF files?",
+        "What does manual ingestion mean?",
+        "Explain the ingestion process.",
+        "What is the SLA for Kafka ingestion?",
+        "How do I configure manual ingestion retries?",
+        "",
+        "  ",
+        "\u2003\u2003",
+    ],
+)
+def test_named_manual_ingestion_scope_rejects_generic_or_unrelated_queries(question):
+    from nora.agent import named_manual_ingestion_scope
+
+    assert named_manual_ingestion_scope(question) is False
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        {"title": "Manual ingestion", "doc_id": ""},
+        {"title": "Manual ingestion", "doc_id": "invalid"},
+        {"title": "Manual ingestion"},
+        {
+            "title": "Architecture decisions",
+            "heading": "## Processing contract",
+            "text": UNTITLED_PROCESSING_CONTRACT,
+            "doc_id": "a" * 64,
+        },
+        {},
+    ],
+)
+def test_named_scope_empty_or_broader_title_only_rows_no_autoread(tmp_path, row):
+    from nora.agent import named_manual_ingestion_scope
+
+    question = "What is the SLA per the 'Manual ingestion' guide? Answer in at most 200 words."
+    assert named_manual_ingestion_scope(question) is True
+    knowledge = PreparationGuideKnowledge(
+        [row] if row else [],
+        read_result={"doc_id": "a" * 64, "text": "No SLA specified."},
+    )
+    settings, state, model = guide_runtime(
+        tmp_path, knowledge, [AIMessage(content="No SLA specified in retrieved passages.")]
+    )
+    with TestClient(create_app(settings, state, token="test")) as client:
+        response = client.post(
+            "/ask",
+            headers={"Authorization": "Bearer test"},
+            json={"question": question},
+        )
+    assert response.status_code == 200, response.text
+    assert [name for name, _ in knowledge.calls] == ["search"]
+    assert len(model.observed) == 1
+
+
+def test_named_scope_smaller_budget_one_no_autoread(tmp_path):
+    knowledge = PreparationGuideKnowledge([{"doc_id": "a" * 64, "title": "Manual ingestion"}])
+    settings, state, model = guide_runtime(
+        tmp_path, knowledge, [AIMessage(content=SLA_ANSWER)], call_limit=1
+    )
+    with TestClient(create_app(settings, state, token="test")) as client:
+        response = client.post(
+            "/ask",
+            headers={"Authorization": "Bearer test"},
+            json={"question": NAMED_GUIDE_QUESTION},
+        )
+    assert response.status_code == 200, response.text
+    assert [name for name, _ in knowledge.calls] == ["search"]
+    assert len(model.observed) == 1
+
+
+def test_named_scope_autocalls_allow_one_block_one_and_reset_across_repeated_same_uuid(tmp_path):
+    from nora.agent import PREPARATION_QUERY
+
+    knowledge = PreparationGuideKnowledge([{"doc_id": "a" * 64, "title": "Manual ingestion"}])
+    batch = AIMessage(
+        content="",
+        tool_calls=[
+            {"name": "search_knowledge", "args": {"query": f"extra {i}"}, "id": f"extra-{i}"}
+            for i in range(2)
+        ],
+    )
+    settings, state, model = guide_runtime(
+        tmp_path,
+        knowledge,
+        [
+            batch,
+            AIMessage(content=SLA_ANSWER),
+            batch.model_copy(deep=True),
+            AIMessage(content=SLA_ANSWER),
+        ],
+    )
+    thread = str(uuid.uuid4())
+    with TestClient(create_app(settings, state, token="test")) as client:
+        for question in (NAMED_GUIDE_QUESTION, NAMED_GUIDE_QUESTION):
+            start = len(knowledge.calls)
+            response = client.post(
+                "/ask",
+                headers={"Authorization": "Bearer test"},
+                json={"question": question, "thread_id": thread},
+            )
+            assert response.status_code == 200, response.text
+            assert knowledge.calls[start:] == [
+                ("search", {"query": PREPARATION_QUERY}),
+                ("read", {"doc_id": "a" * 64, "offset": 0}),
+                ("search", {"query": "extra 0"}),
+            ]
+    assert len(model.observed) == 4
+    for messages in (model.observed[1], model.observed[3]):
+        last_human = max(i for i, m in enumerate(messages) if isinstance(m, HumanMessage))
+        blocked = [
+            m for m in messages[last_human:] if isinstance(m, ToolMessage) and m.status == "error"
+        ]
+        assert [m.tool_call_id for m in blocked] == ["extra-1"]
+
+
+def test_named_scope_unrelated_current_topic_after_named_guide_no_target_no_autoread(tmp_path):
+    from nora.agent import PREPARATION_QUERY
+
+    knowledge = PreparationGuideKnowledge([{"doc_id": "a" * 64, "title": "Manual ingestion"}])
+    settings, state, model = guide_runtime(
+        tmp_path,
+        knowledge,
+        [AIMessage(content=SLA_ANSWER), AIMessage(content="Kafka partitions allow parallelism.")],
+    )
+    thread = str(uuid.uuid4())
+    with TestClient(create_app(settings, state, token="test")) as client:
+        response1 = client.post(
+            "/ask",
+            headers={"Authorization": "Bearer test"},
+            json={"question": NAMED_GUIDE_QUESTION, "thread_id": thread},
+        )
+        assert response1.status_code == 200, response1.text
+        assert knowledge.calls == [
+            ("search", {"query": PREPARATION_QUERY}),
+            ("read", {"doc_id": "a" * 64, "offset": 0}),
+        ]
+        start = len(knowledge.calls)
+        response2 = client.post(
+            "/ask",
+            headers={"Authorization": "Bearer test"},
+            json={"question": "Explain Kafka partitions", "thread_id": thread},
+        )
+        assert response2.status_code == 200, response2.text
+        assert knowledge.calls[start:] == [("search", {"query": "Explain Kafka partitions"})]
+        assert response2.json()["answer"] == "Kafka partitions allow parallelism."
+
+
+@pytest.mark.parametrize(
+    "query, expected",
+    [
+        ('What is the SLA in the "Manual ingestion" guide?', True),
+        ("What is the SLA per the Manual ingestion guide?", True),
+        ("What is the SLA under the Manual ingestion document?", True),
+        ("What is the SLA according to the Manual ingestion source?", True),
+        ("What is the SLA in the Manual ingestion heading?", True),
+        ("How does manual ingestion work?", False),
+        ("Explain NIS ingestion.", False),
+        ("\u2003\u2003Manual ingestion SLA", False),
+        ("\u00a0Manual\u00a0Ingestion\u00a0guide SLA", True),
+        ("SLA in the manual-ingestion-guide", False),
+        ("SLA in manual-ingestion", False),
+        ("What source data is needed for manual ingestion?", False),
+        ("Manualingestion guide SLA", False),
+        ("“Manual ingestion”: SLA?", True),
+    ],
+)
+def test_named_manual_ingestion_scope_helper_variants(query, expected):
+    from nora.agent import named_manual_ingestion_scope
+
+    assert named_manual_ingestion_scope(query) is expected
+
+
+def test_named_guide_short_answer_then_unscoped_followup_preserves_history(tmp_path):
+    from nora.agent import PREPARATION_QUERY
+
+    knowledge = PreparationGuideKnowledge(
+        [{"doc_id": "a" * 64, "title": "Manual ingestion"}],
+        read_result={
+            "doc_id": "a" * 64,
+            "text": "# Manual ingestion\nAn operator starts ingestion; user questions do not start jobs.",
+        },
+    )
+    first = 'Under "Manual ingestion", is ingestion triggered by an operational manual action? Answer in at most 30 words.'
+    followup = (
+        "Does a user question start an ingestion job automatically? Answer in at most 20 words."
+    )
+    answers = ["Yes, an operator starts ingestion.", "No. User questions do not start ingestion."]
+    settings, state, model = guide_runtime(
+        tmp_path, knowledge, [AIMessage(content=a) for a in answers]
+    )
+    thread = str(uuid.uuid4())
+    with TestClient(create_app(settings, state, token="test")) as client:
+        headers = {"Authorization": "Bearer test"}
+        for question, answer, cap in zip([first, followup], answers, [30, 20], strict=True):
+            response = client.post(
+                "/ask", headers=headers, json={"question": question, "thread_id": thread}
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["answer"] == answer
+            assert len(answer.split()) <= cap
+        history = client.get("/history/" + thread, headers=headers).json()["messages"]
+        assert [m["content"] for m in history] == [first, answers[0], followup, answers[1]]
+        assert all("nora_answer_repair" not in str(m) for m in history)
+    assert knowledge.calls == [
+        ("search", {"query": PREPARATION_QUERY}),
+        ("read", {"doc_id": "a" * 64, "offset": 0}),
+        ("search", {"query": followup}),
+    ]
+    assert len(model.observed) == 2
