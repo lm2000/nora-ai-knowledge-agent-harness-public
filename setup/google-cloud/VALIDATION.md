@@ -4,6 +4,10 @@
 
 The foundation has an offline test suite. It does not prove cloud permissions, networking, service readiness or successful recovery on a real target.
 
+![The service layout that the foundation is intended to host.](../../architecture/diagrams/container-service-inventory.gif)
+
+[Local browser version](../../architecture/diagrams/container-service-inventory.html)
+
 ## Repeat the checks
 
 From the repository root:

@@ -4,6 +4,10 @@
 
 Coordination owns the conversation: it selects an answer model, runs the OSS Deep Agent and persists history. For example, a question about Atlas and its UUID follow-up use the same assistant and checkpoints, regardless of client transport.
 
+![How Coordination serves one question.](../../architecture/diagrams/architecture-request-path.gif)
+
+[Local browser version](../../architecture/diagrams/architecture-request-path.html)
+
 ## Selected one-assistant target — 2026-10-02
 
 FastMCP is embedded in the existing FastAPI process. `ask_nis(question, thread_id=None)` returns a plain answer and conversation UUID. Omitting the UUID starts a new topic; supplying it continues that assistant conversation. LiteLLM runs as a separate gateway to the same tool. HTTP and MCP invoke the same operation in process, and their lifespans share startup/shutdown.

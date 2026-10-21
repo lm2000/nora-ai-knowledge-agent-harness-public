@@ -4,6 +4,10 @@
 
 Client inference defaults to the configured NIS RAG Cloud route. Explicit alternatives are native OpenAI, Ollama Cloud, and Ollama Local; Fireworks is legacy and not enabled. For example, a comparison can require a higher quality tier than a simple saved-fact question. Selection meets the required quality tier first, then compares configured cost and latency assumptions.
 
+![Application and client inference sit at different boundaries.](../architecture/diagrams/01-system-architecture.gif)
+
+[Local browser version](../architecture/diagrams/01-system-architecture.html)
+
 ## Two configuration layers
 
 Coordination's model adapters and selector belong to the application. A client such as Codex separately chooses native inference or a saved NIS route. An available source adapter does not imply an enabled deployment credential or fallback. The dated [configuration record](private-deployment/STATUS.md#configuration-reference--2026-10-21) owns the installation; the gateway reference below retains its October 15 verification scope.

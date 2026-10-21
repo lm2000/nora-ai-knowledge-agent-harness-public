@@ -4,6 +4,10 @@
 
 The historical September 5, 2026 validation recorded eight passing focused tests and four completed CPU float32 workers. Earlier failed drafts were superseded; their original records remain in the private archive.
 
+![The experiment method and the boundary between consistency checks and unvalidated retrieval quality.](../../architecture/diagrams/embedding-comparison-method.gif)
+
+[Local browser version](../../architecture/diagrams/embedding-comparison-method.html)
+
 Tests covered metric definitions, multiple positives, unlabelled questions, MRR cutoff, pooling with either padding side, token limits, source-quote validation and output preservation. Post-run checks compared pinned revisions, input/code hashes, dimensions, settings and repeated rankings. The 17 excerpt ranges matched their recorded source hashes at that check time.
 
 These checks support consistency of the recorded experiment. They do not validate exhaustive relevance judgments, a running Retrieval MCP service, target-server performance or a deployment decision. BGE was selected later; the historical benchmark's limited evidence remains unchanged.

@@ -6,15 +6,19 @@ Improve the complete harness as an engineering project that a hiring manager can
 understand quickly and a technical interviewer can inspect in depth. Keep the
 reader's path clear: problem → architecture → workflows → decisions → evidence.
 
+![The three workflows tracked by this roadmap.](architecture/diagrams/harness-workflows.gif)
+
+[Local browser version](architecture/diagrams/harness-workflows.html)
+
 ## Execution progress
 
 | Area | Source state | Next acceptance result |
 | --- | --- | --- |
-| Portfolio-wide review | Two improvement passes cover documentation, diagrams, code, UI, tests and public/private boundaries | Integrated locally into main; checks and independent review pass; no push or deployment |
+| Portfolio-wide review | Two improvement passes are integrated into `main`; source checks and independent review are recorded below | Representative quality and deployment acceptance remain separate work |
 | Question answering | One runtime, MCP entrance, bounded retrieval/model calls and PostgreSQL checkpoints implemented | Representative multi-turn quality and failure-slice evaluation |
 | Knowledge ingestion | Conversion, preparation, embedding and import/verification are separate jobs | Operator-selected corpus refresh and deployment acceptance remain separately owned |
 | Artifact review | Saved-response validation, exact-response decisions and synthetic two-version cycle implemented | External runner/provider execution and live-review acceptance are separate work |
-| Documentation and visuals | Reader route, Atlas example and evaluation diagram updated in local commits | Map the accepted source material to the separate website before editing it |
+| Documentation and visuals | Reader route and Atlas example are in `main`; the compact README system view and clearer review boundary pass local documentation checks | Map accepted source material to the separate website before editing it |
 | Deployment and recovery | Dated bounded results retained in the deployment record | Broader recovery and clean-target acceptance beyond existing checks |
 
 ## Documentation and diagram consistency
@@ -26,18 +30,18 @@ larger, existing visual conventions replace the invented design concept, and
 the diagram catalog starts with three main views. Application defects remain
 separate implementation work.
 
-The reader pass is complete locally: README opens with the Atlas question and
-names Michael's application work; the artifact-review guide leads with owner
-decisions and a before/after example; its diagram shows concrete feedback.
-The latest documentation commit is `ed25a04`. The next documentation step is
-mapping this accepted material to the separate website.
+The reader pass brings Michael's application work above the compact architecture
+view, keeps the detailed view one link away, and leads the artifact-review guide
+with owner decisions and a before/after example. The next documentation step is
+mapping this source material to the separate website.
 
 ## Current review
 
 1. Audited the repository; dated findings and evidence are in the validation record.
 2. Improved the engineering narrative, diagrams, examples and document ownership.
 3. Fixed confirmed local defects with regression coverage and verified the UI.
-4. Source/release checks and independent review pass; changes are committed locally.
+4. Source/release checks and independent review passed for the two earlier
+   improvement cycles. This reader-pass edit has its own validation record.
 
 The [validation record](evaluation/VALIDATION.md) owns dated outcomes. The source
 review does not activate ingestion, change services or publish the website.

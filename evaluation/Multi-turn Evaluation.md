@@ -4,6 +4,10 @@
 
 Example: the user asks for an Atlas project handover brief, corrects the project name, then supplies the date. Nora should apply the correction, retain relevant context and continue the same task—not repeat the earlier assumption.
 
+![Conversation continuity across a question and follow-up.](../architecture/diagrams/conversation.gif)
+
+[Local browser version](../architecture/diagrams/conversation.html)
+
 This page plans application evaluation. The completed [retrieval experiments](README.md) test a smaller boundary. LangSmith tracing/evaluation and Studio are selected but not configured; no application dataset upload, trace export or multi-turn run is claimed.
 
 ## Nora scenarios and expected criteria

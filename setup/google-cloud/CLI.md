@@ -4,6 +4,10 @@
 
 Run this guide on an operator workstation with Python 3, Bash and the Google Cloud CLI. The target project must already exist with billing and the operator's required provisioning permissions.
 
+![The application services intended for the provisioned host.](../../architecture/diagrams/container-service-inventory.gif)
+
+[Local browser version](../../architecture/diagrams/container-service-inventory.html)
+
 ## Configure the target
 
 From the repository root:

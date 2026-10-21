@@ -4,6 +4,10 @@
 
 This optional configurable CLI prepares a private VM, network, identity and storage. For example, preview a VM and data disk before installing the application.
 
+![The application services supported by this optional cloud foundation.](../../architecture/diagrams/container-service-inventory.gif)
+
+[Local browser version](../../architecture/diagrams/container-service-inventory.html)
+
 It does not install the [shared application](../README.md). Its provisioning tests passed offline; this bundle's tests do not establish the state of any running project.
 
 1. Copy and fill the configuration examples, then preview the [CLI stages](CLI.md).

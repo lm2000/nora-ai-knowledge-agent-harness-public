@@ -26,7 +26,10 @@ rollback rehearsal. The draft mentions only the load test.
 > Atlas release requires a passing payment-service load test and a completed rollback rehearsal.
 
 Release duration remains unknown; the existing open-questions section is retained.
-These are synthetic saved reviews, not live model calls.
+These are synthetic saved reviews, not live model calls. The local CLI validates
+saved responses and records owner decisions; it does not send requests to
+Harbor Hub, Fireworks or Hugging Face Inference Providers. The external route
+below describes how the same review structure can be used with those services.
 
 ![Review configuration feeds Harbor Hub or direct judge requests, provider feedback and owner decisions; accepted changes improve the artifact and retained lessons improve the next brief.](../../architecture/diagrams/artifact-review-flow.gif)
 
@@ -46,10 +49,11 @@ These are synthetic saved reviews, not live model calls.
 
 ## Configuration and request flow
 
-The local Atlas fixture and an external execution configuration share the same
-review structure, but use different execution routes.
+The table compares the local Atlas packet with settings an external runner would
+need. Both use the same review structure, but only the local saved-response route
+is provided by this CLI.
 
-| Setting | Local Atlas fixture | External execution configuration |
+| Setting | Local Atlas fixture | External runner settings |
 | --- | --- | --- |
 | Material / dataset | Release briefing v1 and its versioned source plan | Frozen artifact and source evidence |
 | Task | Write a source-grounded Atlas release briefing | Define the artifact's purpose |
@@ -61,26 +65,22 @@ review structure, but use different execution routes.
 | Output | Saved findings → owner decisions → briefing v2 | Findings per judge → owner decisions → retain or revise |
 
 The [Atlas packet](../../examples/artifact-review/packet.json) contains the local
-settings. External execution is a separate configuration; the local CLI does not
+settings. An external runner needs separate configuration; the local CLI does not
 invoke these services.
 
-The runner sends the artifact, evidence, criteria and assigned perspective to
-its judge model. **Harbor Hub** is a task-execution option; **Fireworks** and
+An external runner would send the artifact, evidence, criteria and assigned
+perspective to its judge model. **Harbor Hub** is a task-execution option; **Fireworks** and
 **Hugging Face Inference Providers** are model-execution options. Feedback
 returns to the owner. Several perspectives from one model are correlated
 opinions, not independent experts.
 
 ## Keep improving, keep building
 
-There are two feedback loops: improve the artifact, and improve the next review
-brief. The owner carries useful findings, rejected suggestions and decisions
-forward. For Atlas, the next brief can explicitly ask judges to check **all**
-release prerequisites and avoid inventing timings.
-
-Each cycle improves the artifact and helps the owner write a better review
-brief. The owner carries lessons forward by editing that brief. Keep task and
-criteria fixed when comparing versions. A changed rubric gets a new version and
-starts a new comparison.
+The owner can revise the artifact or keep the current version when feedback
+does not justify a change. Useful findings and rejected suggestions can still
+improve the next review brief. For Atlas, the owner adds a check for every
+release prerequisite and a rule against invented timing. Keep task and criteria
+fixed when comparing versions; a changed rubric starts a new comparison.
 
 **Example next review brief, edited by the owner:**
 

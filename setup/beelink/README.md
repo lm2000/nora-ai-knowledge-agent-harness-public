@@ -4,6 +4,10 @@
 
 A Linux mini-PC can host Nora's application and databases. Use the [shared setup procedure](../README.md#run-the-application); there is no separate Beelink application copy or required SSH hostname.
 
+![The application services placed on this target.](../../architecture/diagrams/container-service-inventory.gif)
+
+[Local browser version](../../architecture/diagrams/container-service-inventory.html)
+
 Choose persistent storage for `.runtime/` and the named database volumes. Set `NORA_UID` and `NORA_GID` to the host account that owns the prepared files and credentials. Query encoding uses CPU BGE; optional local answer generation has a separate memory and compute requirement.
 
 The default answer route remains Ollama Cloud. The optional `local-model` profile provides a local Ollama container after the operator chooses and installs a suitable tool-capable model. No local model or Docker service was started as part of this refactor.

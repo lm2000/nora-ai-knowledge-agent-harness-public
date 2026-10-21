@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NIS at a glance</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#eaf0f6;color:#182d48;font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  main{max-width:1040px;margin:24px auto;background:white;border:1px solid #d5dfeb;border-radius:16px;overflow:hidden}
+  #export{padding:24px 30px 18px;background:white}header h1{margin:0;font-size:28px;line-height:1.15}header p{margin:8px 0 10px;color:#53647d;font-size:16px}
+  svg{display:block;width:100%;height:auto;font-family:inherit}svg text{fill:#182d48}.sub{fill:#52647c;font-size:17px}.tag{font-size:12px;font-weight:700;letter-spacing:1.2px}
+  .node{cursor:pointer}.node:hover rect,.node:focus rect,.node.selected rect{stroke-width:3.5}.edge path{fill:none;stroke:#879ab1;stroke-width:3;marker-end:url(#arrow)}.edge.active path{stroke:#177cb3;stroke-width:4}
+  .note{margin:5px 0 0;color:#53647d;font-size:14px}.mobile-hint{display:none}.pulse{fill:#177cb3}
+  #details{border-top:1px solid #dce5ef;padding:16px 30px;min-height:85px;color:#344b65}#details strong{display:block;color:#182d48}
+  @media(max-width:700px){main{margin:8px}#export{padding:16px}header h1{font-size:23px}header p{font-size:14px}.diagram-scroll{overflow-x:auto}.diagram-scroll svg{min-width:700px}.mobile-hint{display:block;margin:0;color:#53647d;font-size:13px}#details{padding:14px 16px}}
+  @media(prefers-reduced-motion:reduce){.pulse{display:none}}
+</style>
+</head>
+<body><main>
+<div id="export">
+<header><h1>NIS at a glance</h1><p>One assistant answers from prepared knowledge and keeps topic conversations.</p></header>
+<div class="diagram-scroll"><svg viewBox="0 0 980 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagram-title diagram-description">
+<title id="diagram-title">Nora Intelligence System source architecture at a glance</title>
+<desc id="diagram-description">Clients call the NIS assistant. The assistant uses retrieval, model providers and PostgreSQL checkpoints. A separate manual ingestion job updates the knowledge used by retrieval.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#879ab1"/></marker></defs>
+<g class="edge" data-from="clients" data-to="assistant"><path id="path0" d="M280 105H365"/><circle class="pulse" data-path="path0" r="5" opacity="0"/></g>
+<g class="edge" data-from="assistant" data-to="retrieval"><path id="path1" d="M615 105H700"/><circle class="pulse" data-path="path1" r="5" opacity="0"/></g>
+<g class="edge" data-from="assistant" data-to="postgres"><path id="path2" d="M490 160V260"/><circle class="pulse" data-path="path2" r="5" opacity="0"/></g>
+<g class="edge" data-from="assistant" data-to="models"><path id="path3" d="M615 125H650V390H700"/><circle class="pulse" data-path="path3" r="5" opacity="0"/></g>
+<g class="edge" data-from="ingestion" data-to="retrieval"><path id="path4" d="M30 315H12V20H825V50"/><circle class="pulse" data-path="path4" r="5" opacity="0"/></g>
+<g class="node" id="clients" role="button" tabindex="0" aria-label="Clients"><rect x="30" y="50" width="250" height="110" rx="15" fill="#f5f7fa" stroke="#62738b" stroke-width="2"/><text x="50" y="75" class="tag" fill="#62738b">CLIENTS</text><text x="50" y="108" font-size="24" font-weight="650">Browser + MCP</text><text x="50" y="138" class="sub">Questions and follow-ups</text></g>
+<g class="node" id="assistant" role="button" tabindex="0" aria-label="NIS assistant"><rect x="365" y="50" width="250" height="110" rx="15" fill="#eff6ff" stroke="#3778b9" stroke-width="2"/><text x="385" y="75" class="tag" fill="#3778b9">COORDINATION</text><text x="385" y="108" font-size="24" font-weight="650">NIS assistant</text><text x="385" y="138" class="sub">Deep Agents / LangGraph</text></g>
+<g class="node" id="retrieval" role="button" tabindex="0" aria-label="Retrieval"><rect x="700" y="50" width="250" height="110" rx="15" fill="#eff6ff" stroke="#3778b9" stroke-width="2"/><text x="720" y="75" class="tag" fill="#3778b9">KNOWLEDGE SERVICE</text><text x="720" y="108" font-size="24" font-weight="650">Retrieval MCP</text><text x="720" y="138" class="sub">BGE · Qdrant · source text</text></g>
+<g class="node" id="ingestion" role="button" tabindex="0" aria-label="Manual ingestion"><rect x="30" y="260" width="250" height="110" rx="15" fill="#fff6e8" stroke="#b9842f" stroke-width="2"/><text x="50" y="285" class="tag" fill="#b9842f">SEPARATE WORKFLOW</text><text x="50" y="318" font-size="24" font-weight="650">Manual ingestion</text><text x="50" y="348" class="sub">Prepare and verify updates</text></g>
+<g class="node" id="postgres" role="button" tabindex="0" aria-label="PostgreSQL"><rect x="365" y="260" width="250" height="110" rx="15" fill="#edf9f5" stroke="#21836c" stroke-width="2"/><text x="385" y="285" class="tag" fill="#21836c">CONVERSATION STATE</text><text x="385" y="318" font-size="24" font-weight="650">PostgreSQL</text><text x="385" y="348" class="sub">Topic checkpoints</text></g>
+<g class="node" id="models" role="button" tabindex="0" aria-label="Model providers"><rect x="700" y="340" width="250" height="100" rx="15" fill="#f3f5f8" stroke="#7b879c" stroke-width="2"/><text x="720" y="365" class="tag" fill="#7b879c">INFERENCE</text><text x="720" y="398" font-size="24" font-weight="650">Model providers</text><text x="720" y="425" class="sub">Configured adapters</text></g>
+</svg></div>
+<p class="mobile-hint">Scroll the diagram sideways to read each component.</p>
+<p class="note">Source architecture. The selected deployment route belongs to the dated deployment record; the detailed diagram shows both supported MCP entrances.</p>
+</div>
+<aside id="details" aria-live="polite"><strong>Explore the diagram</strong>Select a component to see its role.</aside>
+</main>
+<script>
+const details={
+ clients:"The browser UI and MCP clients reach the same assistant operations. The detailed diagram separates their entrances.",
+ assistant:"Coordination owns the assistant, conversation lifecycle and bounded model and retrieval calls.",
+ retrieval:"The separate retrieval service searches Qdrant with BGE embeddings and reads prepared source text.",
+ ingestion:"Operator-run jobs prepare and verify knowledge updates outside question answering.",
+ postgres:"LangGraph stores topic conversation checkpoints in PostgreSQL.",
+ models:"Configured model adapters provide inference; the assistant owns selection and limits."
+};
+const nodes=[...document.querySelectorAll('.node')],edges=[...document.querySelectorAll('.edge')],panel=document.querySelector('#details');
+function select(id){nodes.forEach(n=>n.classList.toggle('selected',n.id===id));edges.forEach(e=>e.classList.toggle('active',e.dataset.from===id||e.dataset.to===id));panel.replaceChildren();const title=document.createElement('strong');title.textContent=document.querySelector('#'+id).getAttribute('aria-label');panel.append(title,document.createTextNode(details[id]));}
+nodes.forEach(n=>{n.onclick=()=>select(n.id);n.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(n.id);}}});
+const pulses=[...document.querySelectorAll('.pulse')];let manual=false;window.freezeDiagram=t=>{manual=true;update(t)};
+function update(t){pulses.forEach((pulse,i)=>{const path=document.querySelector('#'+pulse.dataset.path);const point=path.getPointAtLength(path.getTotalLength()*((t/5+i/pulses.length)%1));pulse.setAttribute('cx',point.x);pulse.setAttribute('cy',point.y);pulse.setAttribute('opacity','.9');});}
+function tick(ms){if(!manual&&!matchMedia('(prefers-reduced-motion: reduce)').matches)update(ms/1000);requestAnimationFrame(tick)}requestAnimationFrame(tick);
+</script>
+</body></html>

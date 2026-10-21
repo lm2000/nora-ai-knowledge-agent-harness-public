@@ -4,6 +4,10 @@
 
 The suite sends a fixed question set to the live Retrieval MCP `search` tool and scores expected-document rank. It is useful for detecting a changed result; determining why a result changed requires inspecting the fixtures and retrieved text.
 
+![The request path these retrieval checks exercise.](../../architecture/diagrams/architecture-request-path.gif)
+
+[Local browser version](../../architecture/diagrams/architecture-request-path.html)
+
 ## Current baseline
 
 | Metric | September 14, 2026 live repeat | Default threshold |

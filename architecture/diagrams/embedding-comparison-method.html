@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embedding comparison method and evidence boundary</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; background: #eaf0f6; color: #182d48; font: 16px/1.4 system-ui, sans-serif; }
+  .diagram-container { box-sizing: border-box; width: min(100%, 1040px); padding: 28px; margin: 0 auto; background: #fff; }
+  h1 { font-size: 25px; margin: 0 0 5px; }
+  p { margin: 0 0 16px; color: #344a64; }
+  svg { display: block; width: 100%; height: auto; }
+  .tag { fill: #3e5874; font-size: 13px; font-weight: 700; letter-spacing: .5px; }
+  .title { fill: #182d48; font-size: 19px; font-weight: 700; }
+  .body { fill: #344a64; font-size: 14px; }
+  .boundary { fill: #182d48; font-size: 17px; font-weight: 700; }
+  .note { font-size: 14px; margin: 12px 0 0; }
+  details { box-sizing: border-box; max-width: 1040px; margin: 0 auto; background: #fff; padding: 0 28px 22px; }
+  summary { color: #254f82; cursor: pointer; font-weight: 650; }
+  details p { margin: 8px 0 0; }
+</style>
+<main class="diagram-container">
+  <h1>Embedding comparison: method and limits</h1>
+  <p>One small historical CPU experiment · September 2026</p>
+  <svg viewBox="0 0 1000 350" role="img" aria-labelledby="method-title method-desc">
+    <title id="method-title">How the BGE and Qwen CPU comparison was run and checked</title>
+    <desc id="method-desc">Freeze 17 excerpts and three provisional queries; pin BGE and Qwen configurations; run separate repeated CPU trials; report speed, memory and diagnostic rankings. Hash, revision and ranking checks support consistency, not a retrieval-quality or deployment claim.</desc>
+    <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#59738f"/></marker></defs>
+    <text x="20" y="24" class="tag">COMPARABLE INPUTS AND EXECUTION</text>
+    <path d="M240 108 H255" fill="none" stroke="#59738f" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <path d="M490 108 H505" fill="none" stroke="#59738f" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <path d="M740 108 H755" fill="none" stroke="#59738f" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <rect x="20" y="48" width="220" height="126" rx="13" fill="#edf9f5" stroke="#21836c" stroke-width="2"/>
+    <text x="36" y="75" class="tag">INPUT</text><text x="36" y="106" class="title">Freeze sources</text>
+    <text x="36" y="133" class="body">17 excerpts · 3 queries</text><text x="36" y="154" class="body">Paths, hashes, offsets</text>
+    <rect x="260" y="48" width="230" height="126" rx="13" fill="#eff6ff" stroke="#3778b9" stroke-width="2"/>
+    <text x="276" y="75" class="tag">CONFIGURATION</text><text x="276" y="106" class="title">Pin both models</text>
+    <text x="276" y="133" class="body">Revisions, pooling, tokens</text><text x="276" y="154" class="body">Same normalization</text>
+    <rect x="510" y="48" width="230" height="126" rx="13" fill="#eff6ff" stroke="#3778b9" stroke-width="2"/>
+    <text x="526" y="75" class="tag">EXECUTION</text><text x="526" y="106" class="title">Run CPU trials</text>
+    <text x="526" y="133" class="body">Separate processes</text><text x="526" y="154" class="body">Warmup + 3 repeats</text>
+    <rect x="760" y="48" width="220" height="126" rx="13" fill="#fff6e8" stroke="#b9842f" stroke-width="2"/>
+    <text x="776" y="75" class="tag">OUTPUT</text><text x="776" y="106" class="title">Report measures</text>
+    <text x="776" y="133" class="body">Speed, memory</text><text x="776" y="154" class="body">Diagnostic ranking</text>
+    <text x="20" y="221" class="tag">EVIDENCE BOUNDARY</text>
+    <rect x="20" y="239" width="470" height="90" rx="12" fill="#edf9f5" stroke="#21836c" stroke-width="2"/>
+    <text x="36" y="269" class="boundary">Checked for consistency</text>
+    <text x="36" y="294" class="body">Source hashes, revisions, settings and repeated rankings</text>
+    <rect x="510" y="239" width="470" height="90" rx="12" fill="#fff6e8" stroke="#b9842f" stroke-width="2"/>
+    <text x="526" y="269" class="boundary">Not established by this run</text>
+    <text x="526" y="294" class="body">Validated relevance quality or target-server performance</text>
+  </svg>
+  <p class="note">The three relevance judgments were provisional. Read the method, validation and results together.</p>
+</main>
+<details><summary>Read the experiment sequence</summary><p>Both pinned models encoded the same inputs. Separate CPU processes ran in BGE/Qwen/Qwen/BGE order; document and query timing excluded warmup. The validation checked recorded identities and repeatability. The diagnostic retrieval labels were not independently validated.</p></details>
+</html>

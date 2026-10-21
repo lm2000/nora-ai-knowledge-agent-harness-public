@@ -4,6 +4,10 @@
 
 This September 2026 CPU experiment compared BGE base English v1.5 with Qwen3 Embedding 0.6B. BGE was faster and used less process memory on the measured workload; it was subsequently selected for Nora. The small provisional relevance set did not establish a quality winner.
 
+![Historical CPU comparison: BGE has higher document throughput and lower median query latency on the measured small workload.](../../architecture/diagrams/embedding-cpu-comparison.gif)
+
+[Local browser version](../../architecture/diagrams/embedding-cpu-comparison.html)
+
 ## Inspect the result
 
 Read [RESULTS.md](RESULTS.md) for measurements and [PROTOCOL.md](PROTOCOL.md) for model pins, pooling, timing and metric definitions. The 17 excerpts and three diagnostic queries came from private project material. Aggregate results can be read without redistributing those inputs.

@@ -4,6 +4,10 @@
 
 Package an operator-run ingestion batch as temporary jobs. **Example:** conversion reads selected notes, preparation and embedding produce a complete bundle, and import verifies a new Qdrant collection before the operator selects it for Retrieval.
 
+![The separate operator-run ingestion stages.](../../architecture/diagrams/manual-ingestion.gif)
+
+[Local browser version](../../architecture/diagrams/manual-ingestion.html)
+
 ## Selected target packaging
 
 Root Compose implements four separate job services under the `ingestion` profile. Each has its own entrypoint and completed input/output contract; each exits after its stage. [D167](../../Decisions.md#manual-ingestion-outside-conversations) and [D169](../../Decisions.md#manual-ingestion-outside-conversations) record the design. The [manual workflow](../../workflows/ingestion/README.md#selected-target-workflow) owns ordering and artifact semantics.

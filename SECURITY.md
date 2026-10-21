@@ -4,6 +4,10 @@
 
 Nora's current reference deployment serves one operator through private access. The repository does not establish a hardened public API or a multi-tenant authorization model.
 
+![The service boundaries discussed below.](architecture/diagrams/01-system-architecture.gif)
+
+[Local browser version](architecture/diagrams/01-system-architecture.html)
+
 ## Trust boundaries
 
 - The browser talks to Coordination through the application server.

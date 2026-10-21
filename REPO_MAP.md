@@ -4,6 +4,10 @@
 
 Each topic has one current owner. Superseded material remains available through Git history.
 
+![Runtime components referenced by this repository map.](architecture/diagrams/01-system-architecture.gif)
+
+[Local browser version](architecture/diagrams/01-system-architecture.html)
+
 | Location | Owns |
 | --- | --- |
 | [README](README.md) | Product overview, example, current state and reading route |

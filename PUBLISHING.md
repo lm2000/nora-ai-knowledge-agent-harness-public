@@ -4,6 +4,10 @@
 
 The public repository was created from a clean snapshot built from an explicit file list and fresh history. Each subsequent update follows the same process. The snapshot contains the shared application, portable configuration, synthetic examples, tests, documentation and license notices; it does not carry the private repository's commit history or maintainer operating records.
 
+![The private source is filtered by a release allowlist, validated as a clean snapshot and committed to a separate public repository.](architecture/diagrams/public-source-release.gif)
+
+[Local browser version](architecture/diagrams/public-source-release.html)
+
 ## Build and inspect
 
 From a configured development checkout:

@@ -117,6 +117,8 @@
     "architecture/diagrams/Excalifont-LICENSE.txt",
     "architecture/diagrams/01-system-architecture.html",
     "architecture/diagrams/01-system-architecture.gif",
+    "architecture/diagrams/system-at-a-glance.html",
+    "architecture/diagrams/system-at-a-glance.gif",
     "architecture/diagrams/02-question-to-answer.html",
     "architecture/diagrams/02-question-to-answer.gif",
     "architecture/diagrams/conversation.html",
@@ -134,10 +136,20 @@
     "architecture/diagrams/artifact-review-flow.html",
     "architecture/diagrams/artifact-review-flow.gif",
     "architecture/diagrams/harness-workflows.html",
-    "architecture/diagrams/harness-workflows.gif"
+    "architecture/diagrams/harness-workflows.gif",
+    "architecture/diagrams/embedding-cpu-comparison.html",
+    "architecture/diagrams/embedding-cpu-comparison.gif",
+    "architecture/diagrams/public-source-release.html",
+    "architecture/diagrams/public-source-release.gif",
+    "architecture/diagrams/embedding-comparison-method.html",
+    "architecture/diagrams/embedding-comparison-method.gif"
   ],
   "mermaid_blocks": {},
   "diagram_pairs": [
+    {
+      "source": "architecture/diagrams/system-at-a-glance.html",
+      "preview": "architecture/diagrams/system-at-a-glance.gif"
+    },
     {
       "source": "architecture/diagrams/01-system-architecture.html",
       "preview": "architecture/diagrams/01-system-architecture.gif"
@@ -177,6 +189,18 @@
     {
       "source": "architecture/diagrams/harness-workflows.html",
       "preview": "architecture/diagrams/harness-workflows.gif"
+    },
+    {
+      "source": "architecture/diagrams/embedding-cpu-comparison.html",
+      "preview": "architecture/diagrams/embedding-cpu-comparison.gif"
+    },
+    {
+      "source": "architecture/diagrams/public-source-release.html",
+      "preview": "architecture/diagrams/public-source-release.gif"
+    },
+    {
+      "source": "architecture/diagrams/embedding-comparison-method.html",
+      "preview": "architecture/diagrams/embedding-comparison-method.gif"
     }
   ]
 }

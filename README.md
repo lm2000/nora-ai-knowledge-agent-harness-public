@@ -1,12 +1,12 @@
 # Nora Intelligence System — Knowledge & Agent Harness
 
-A personal knowledge assistant built around a practical problem: answering from
-changing documents while preserving conversation history, source identity and
-control over updates.
+A personal knowledge assistant for answering from changing documents while
+keeping conversation history, source identity and control over updates.
 
-This is Michael Lvov's independent engineering project. The repository shows
-application code, architecture decisions, reproducible synthetic examples and
-bounded evaluation results.
+Michael Lvov built the application layer that connects retrieval, persistent
+conversations, controlled knowledge updates and traceable artifact reviews.
+This independent project includes code, architecture decisions, synthetic
+examples and bounded evaluation results.
 
 ## The system
 
@@ -14,19 +14,18 @@ bounded evaluation results.
 fictional release plan and decisions, identifies the load test and rollback
 rehearsal, and can continue the same conversation.
 
-![NIS clients reach one assistant runtime, which uses shared retrieval, model adapters and PostgreSQL conversation checkpoints.](architecture/diagrams/01-system-architecture.gif)
+![Clients reach the NIS assistant, which uses retrieval, model providers and PostgreSQL; manual ingestion updates its knowledge separately.](architecture/diagrams/system-at-a-glance.gif)
 
-[Local browser version](architecture/diagrams/01-system-architecture.html) · [Architecture and trade-offs](architecture/architecture-concept.md)
+[Local browser version](architecture/diagrams/system-at-a-glance.html) · [Detailed architecture](architecture/diagrams/README.md#system-architecture) · [Architecture and trade-offs](architecture/architecture-concept.md)
 
 One assistant serves separate topic conversations. A Next.js/CopilotKit UI and
 MCP clients reach the same Coordination operation, directly or through a separate
 LiteLLM gateway. Retrieval combines shared BGE embeddings, Qdrant and prepared
-source text. PostgreSQL stores LangGraph conversation checkpoints.
+source text. PostgreSQL stores LangGraph conversation checkpoints. The diagram
+shows source responsibilities; the [dated deployment record](setup/private-deployment/STATUS.md)
+owns the selected route.
 
 ## Project implementation and upstream foundations
-
-Michael built the application layer connecting retrieval, persistent
-conversations, controlled knowledge updates and traceable artifact reviews.
 
 | Project work | Foundation it uses |
 | --- | --- |
@@ -80,7 +79,7 @@ Retrieval relevance, generated-answer quality and execution correctness are
 separate questions. These results do not establish representative answer
 accuracy, enterprise scale or general provider superiority.
 
-## Try a credential-free example
+## Try the artifact-review example
 
 After [installing the source](setup/README.md#install-for-development), run from
 the repository root with a new output directory:
@@ -89,9 +88,10 @@ the repository root with a new output directory:
 nora review-example --output .private/atlas-review-cycle
 ```
 
-Expected result: two synthetic reviews, explicit decisions and the corrected
-Atlas briefing. The example adds a missing prerequisite, rejects invented timing
-and avoids duplicating an existing section. No model request is made.
+This is a separate example from the question-answering example above. Expected
+result: two synthetic reviews, explicit decisions and the corrected Atlas
+briefing. It adds a missing prerequisite, rejects invented timing and avoids
+duplicating an existing section. No model request is made.
 
 For the application, real-embedding smoke test and configuration, follow
 [Setup](setup/README.md). [Contributing](CONTRIBUTING.md) owns development checks.

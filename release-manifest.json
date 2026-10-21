@@ -26,6 +26,8 @@
         "architecture/Research and Design Inputs.md",
         "architecture/diagrams/01-system-architecture.gif",
         "architecture/diagrams/01-system-architecture.html",
+        "architecture/diagrams/system-at-a-glance.gif",
+        "architecture/diagrams/system-at-a-glance.html",
         "architecture/diagrams/02-question-to-answer.gif",
         "architecture/diagrams/02-question-to-answer.html",
         "architecture/diagrams/Excalifont-LICENSE.txt",
@@ -193,6 +195,12 @@
         "examples/artifact-review/packet.json",
         "examples/artifact-review/response-v2.json",
         "examples/artifact-review/response.json",
-        "DESIGN.md"
+        "DESIGN.md",
+        "architecture/diagrams/embedding-cpu-comparison.html",
+        "architecture/diagrams/embedding-cpu-comparison.gif",
+        "architecture/diagrams/public-source-release.html",
+        "architecture/diagrams/public-source-release.gif",
+        "architecture/diagrams/embedding-comparison-method.html",
+        "architecture/diagrams/embedding-comparison-method.gif"
     ]
 }

@@ -26,6 +26,10 @@ List public Markdown and diagram pairs in [public-docs.json](public-docs.json). 
 
 The [release manifest](release-manifest.json) lists every public source file explicitly. Add intended source files there. `make release-check` checks paths, document coverage and common private credential/path markers; `make release` builds a snapshot with per-file hashes. It never includes Git history or runtime data.
 
+![The allowlist and checks that produce a separate public source snapshot.](architecture/diagrams/public-source-release.gif)
+
+[Local browser version](architecture/diagrams/public-source-release.html)
+
 ## Reading and maintaining the project
 
 Write for a reader assessing the engineering work: explain the problem, show the

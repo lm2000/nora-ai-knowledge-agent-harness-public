@@ -4,6 +4,10 @@
 
 Nora's public documentation does not enumerate a user's private archive paths, accounts or document titles. Each installation maintains its own source inventory and access records.
 
+![How source documents become a prepared knowledge release.](../architecture/diagrams/manual-ingestion.gif)
+
+[Local browser version](../architecture/diagrams/manual-ingestion.html)
+
 ## Source families
 
 Different source families can inform the same question. For a project handover, useful material might include project decisions, meeting notes, saved research and the user's correction. Source families are neither separate agents nor evidence that a particular installation has coverage.

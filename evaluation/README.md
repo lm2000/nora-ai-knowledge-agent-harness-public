@@ -4,6 +4,10 @@
 
 Separate application contracts, retrieval relevance and generated-answer quality. For example, a valid MCP response establishes a protocol result; a useful answer also needs the right passages and sound reasoning.
 
+![Where question answering, ingestion and artifact review fit.](../architecture/diagrams/harness-workflows.gif)
+
+[Local browser version](../architecture/diagrams/harness-workflows.html)
+
 | Work | Result | Scope |
 | --- | --- | --- |
 | [Shared-source validation](VALIDATION.md) | Local contracts, UI build and real BGE/MCP smoke pass | Synthetic data; model double for agent tests; three real-embedding questions |
@@ -26,6 +30,10 @@ LangSmith is a future tracing/evaluation option; Harbor is a task-execution opti
 task-specific LLM feedback and owner decisions before delivery. It evaluates the
 artifact separately from retrieval rankings. A saved review can be technically
 valid yet semantically wrong; revision decisions stay with the owner.
+
+![Artifact feedback goes through owner decisions before revision and the next review brief.](../architecture/diagrams/artifact-review-flow.gif)
+
+[Local browser version](../architecture/diagrams/artifact-review-flow.html)
 
 ## Answer-quality investigations
 

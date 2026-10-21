@@ -4,6 +4,10 @@
 
 This page owns the current accepted design. For example, a client asks about the Atlas release and continues with the returned conversation UUID. Dated deployment evidence lives in [deployment status](setup/private-deployment/STATUS.md); superseded choices remain in Git history.
 
+![The system boundaries behind these decisions.](architecture/diagrams/01-system-architecture.gif)
+
+[Local browser version](architecture/diagrams/01-system-architecture.html)
+
 ## Selected target: one assistant with a gateway-backed MCP entrance
 
 **Accepted 2026-10-02; cleanup expanded 2026-10-06.** One NIS assistant handles separate topic conversations. Research, knowledge questions and interview analysis are tasks for that assistant, not separately selectable runtimes. Remove obsolete role configuration, role-specific interfaces and context-transfer machinery.

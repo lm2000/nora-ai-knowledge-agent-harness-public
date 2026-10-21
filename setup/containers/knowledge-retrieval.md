@@ -4,6 +4,10 @@
 
 Retrieval exposes two tools: search for passages and read more of a selected document. Coordination uses this boundary rather than accessing the index or prepared store directly.
 
+![How Retrieval participates in one answer.](../../architecture/diagrams/architecture-request-path.gif)
+
+[Local browser version](../../architecture/diagrams/architecture-request-path.html)
+
 ## Selected target: shared Retrieval and BGE
 
 Retrieval remains a separate shared MCP container for the NIS assistant and intended clients. It calls the **shared BGE server container** for query encoding, queries Qdrant for passages and reads full prepared documents through the local/GCS document-store interface. The assistant uses MCP rather than calling BGE or Qdrant directly.

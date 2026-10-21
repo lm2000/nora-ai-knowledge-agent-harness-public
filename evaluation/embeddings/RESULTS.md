@@ -4,6 +4,10 @@
 
 The run completed on September 5, 2026 using 17 English excerpts and three provisional queries. BGE encoded this small document workload about 4.71 times faster than Qwen and used less process memory. This informed Nora's later BGE selection; it did not establish superior retrieval quality.
 
+![Historical CPU throughput and query-latency comparison for BGE and Qwen.](../../architecture/diagrams/embedding-cpu-comparison.gif)
+
+[Local browser version](../../architecture/diagrams/embedding-cpu-comparison.html)
+
 ## Speed and memory
 
 | Measurement | BGE base en v1.5 | Qwen3 Embedding 0.6B |

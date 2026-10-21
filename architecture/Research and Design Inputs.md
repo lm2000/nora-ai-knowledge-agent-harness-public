@@ -4,6 +4,10 @@
 
 These references explain the technologies and patterns behind Nora. A linked tutorial is not evidence that its features are installed, and Nora does not inherit a tutorial's provider or hosting choices.
 
+![The Nora service boundaries that put the references below in context.](diagrams/01-system-architecture.gif)
+
+[Local browser version](diagrams/01-system-architecture.html)
+
 ## Core references
 
 | Reference | Contribution to Nora |

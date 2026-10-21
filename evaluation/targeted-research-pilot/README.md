@@ -4,6 +4,10 @@
 
 The September 5, 2026 pilot indexed one private research archive locally to test deterministic chunking, BGE encoding and Qdrant retrieval. It was an embedded database experiment, not a shared MCP service or full agent test.
 
+![The retrieval path examined by this pilot.](../../architecture/diagrams/architecture-request-path.gif)
+
+[Local browser version](../../architecture/diagrams/architecture-request-path.html)
+
 ## Dataset and method
 
 The archive contained 106 manifest references and 91 unique documents. Heading-aware chunking used 400-token windows with 50-token overlap, source character offsets and stable identifiers. It produced 481 points using 474 distinct cached text vectors.

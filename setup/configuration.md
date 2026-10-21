@@ -4,6 +4,10 @@
 
 For example, a host can change its answer provider and collection through environment variables while running the same application package. Nora reads settings when a service or CLI command starts; importing a module does not load weights, credentials or clients.
 
+![Configuration owners across the application services.](../architecture/diagrams/container-service-inventory.gif)
+
+[Local browser version](../architecture/diagrams/container-service-inventory.html)
+
 
 ## Accepted target and current interfaces
 

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Historical CPU embedding comparison</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; background: #eaf0f6; color: #182d48; font: 16px/1.4 system-ui, sans-serif; }
+  .diagram-container { box-sizing: border-box; width: min(100%, 960px); padding: 28px; margin: 0 auto; background: #fff; }
+  h1 { font-size: 25px; margin: 0 0 5px; }
+  p { margin: 0 0 17px; color: #344a64; }
+  svg { width: 100%; height: auto; display: block; }
+  .label { fill: #182d48; font-size: 16px; font-weight: 650; }
+  .value { fill: #182d48; font-size: 15px; font-weight: 600; }
+  .axis { fill: #465a73; font-size: 13px; }
+  .note { margin: 15px 0 0; font-size: 14px; }
+</style>
+<main class="diagram-container">
+  <h1>CPU embedding comparison</h1>
+  <p>Historical experiment · 17 English excerpts · Apple M4 Pro · September 2026</p>
+  <svg viewBox="0 0 900 260" role="img" aria-labelledby="chart-title chart-desc">
+    <title id="chart-title">BGE and Qwen embedding speed on a small CPU workload</title>
+    <desc id="chart-desc">BGE encoded 12.87 excerpts per second and Qwen encoded 2.73. Median individual-query latency was 27.8 milliseconds for BGE and 131.0 milliseconds for Qwen. Higher throughput and lower latency are preferable.</desc>
+    <text x="205" y="26" class="axis">DOCUMENT THROUGHPUT · higher is faster</text>
+    <text x="10" y="68" class="label">BGE base en v1.5</text>
+    <rect x="205" y="48" width="600" height="28" rx="5" fill="#dce8f3"/>
+    <rect x="205" y="48" width="594" height="28" rx="5" fill="#315f90"><title>12.87 excerpts per second</title></rect>
+    <text x="813" y="68" class="value">12.87/s</text>
+    <text x="10" y="111" class="label">Qwen3 0.6B</text>
+    <rect x="205" y="91" width="600" height="28" rx="5" fill="#dce8f3"/>
+    <rect x="205" y="91" width="126" height="28" rx="5" fill="#b98737"><title>2.73 excerpts per second</title></rect>
+    <text x="345" y="111" class="value">2.73/s</text>
+    <line x1="10" y1="144" x2="890" y2="144" stroke="#bdcddd"/>
+    <text x="205" y="177" class="axis">INDIVIDUAL QUERY MEDIAN · lower is faster</text>
+    <text x="10" y="213" class="label">BGE base en v1.5</text>
+    <rect x="205" y="194" width="600" height="27" rx="5" fill="#dce8f3"/>
+    <rect x="205" y="194" width="127" height="27" rx="5" fill="#315f90"><title>27.8 milliseconds median</title></rect>
+    <text x="346" y="214" class="value">27.8 ms</text>
+    <text x="10" y="253" class="label">Qwen3 0.6B</text>
+    <rect x="205" y="234" width="600" height="26" rx="5" fill="#dce8f3"/>
+    <rect x="205" y="234" width="600" height="26" rx="5" fill="#b98737"><title>131.0 milliseconds median</title></rect>
+    <text x="813" y="253" class="value">131.0 ms</text>
+  </svg>
+  <p class="note">Small historical CPU experiment. It does not establish retrieval quality or cloud performance. See the results table for memory and method details.</p>
+</main>
+</html>

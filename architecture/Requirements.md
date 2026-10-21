@@ -4,6 +4,10 @@
 
 A useful first result is a brief grounded in the selected documents, with the correct target, a clear answer and explicit gaps. This page states desired behavior; the [evaluation index](../evaluation/README.md) identifies the evidence available for it.
 
+![The component boundaries that implement these requirements.](diagrams/01-system-architecture.gif)
+
+[Local browser version](diagrams/01-system-architecture.html)
+
 The selected 2026-10-02 target is a personal, single-user system with one assistant and new topic chats. Embedded FastMCP exposes one ask tool; LiteLLM provides a gateway to the same interface. Codex is connected first, then OpenClaw. Update all documentation and diagrams before application changes. See [the roadmap](../Plan.md) for progress and later work; source, deployment and conversational acceptance are tracked separately.
 
 ## Conversation behavior

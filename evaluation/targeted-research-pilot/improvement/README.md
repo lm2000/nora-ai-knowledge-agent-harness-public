@@ -4,6 +4,10 @@
 
 This September 5, 2026 experiment added lexical ranking to the same 91-document, 481-point pilot. Questions, expected labels, sources and embeddings remained fixed.
 
+![The request path used for the fixed-query comparison.](../../../architecture/diagrams/architecture-request-path.gif)
+
+[Local browser version](../../../architecture/diagrams/architecture-request-path.html)
+
 | Variant | Hit@1 | Hit@5 | MRR@5 |
 | --- | ---: | ---: | ---: |
 | Original dense, five chunks | 3/6 | 3/6 | 0.5000 |

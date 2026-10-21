@@ -1,12 +1,19 @@
 # Architecture and workflow diagrams
 
-Start with these three views: the system, one request and the workflows.
+Start with the compact system view, then follow one request and compare the workflows.
 They describe source responsibilities. The dated [deployment record](../../setup/private-deployment/STATUS.md#configuration-reference--2026-10-21) owns installation state.
 
 ## System architecture
 
-See the components and their boundaries. The gateway is a supported source path;
-the selected deployment is recorded separately.
+The compact view shows the main responsibilities at reading width.
+
+![NIS source architecture at a glance](system-at-a-glance.gif)
+
+[Local browser version](system-at-a-glance.html)
+
+The detailed view shows component boundaries and both supported MCP entrances.
+The gateway is a supported source path; the selected deployment is recorded
+separately.
 
 ![System architecture](01-system-architecture.gif)
 
@@ -63,6 +70,18 @@ owner decisions and retained lessons. The [workflow guide](../../workflows/artif
 ![Artifact review and revision cycle](artifact-review-flow.gif)
 
 [Local browser version](artifact-review-flow.html)
+
+### Historical CPU embedding comparison
+
+Document throughput and query latency on one small CPU workload. [GIF preview](embedding-cpu-comparison.gif) · [Local browser version](embedding-cpu-comparison.html)
+
+### Embedding comparison method
+
+Shared inputs, pinned models, repeated CPU trials and the evidence boundary. [GIF preview](embedding-comparison-method.gif) · [Local browser version](embedding-comparison-method.html)
+
+### Public source release
+
+The explicit allowlist, clean snapshot and separate public repository. [GIF preview](public-source-release.gif) · [Local browser version](public-source-release.html)
 
 ## Refresh a GIF
 

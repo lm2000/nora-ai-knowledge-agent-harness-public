@@ -22,6 +22,10 @@ palette and diagrams' semantic colors serve different tasks. Share readable
 labels, simple controls and explicit state rather than force every surface into
 one palette. Values above are extracted from existing source, not a new brand.
 
+![Existing diagram style: restrained panels, labeled service boundaries and semantic colors.](architecture/diagrams/01-system-architecture.gif)
+
+[Local browser version](architecture/diagrams/01-system-architecture.html)
+
 ## Colors
 
 Use the UI accent for interaction. Diagram colors distinguish responsibilities;

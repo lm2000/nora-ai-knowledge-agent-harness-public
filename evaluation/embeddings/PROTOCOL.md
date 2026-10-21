@@ -2,6 +2,10 @@
 
 [Run instructions](README.md) · [Results](RESULTS.md)
 
+![The comparison keeps inputs and execution settings comparable, then separates recorded measurements from claims they cannot support.](../../architecture/diagrams/embedding-comparison-method.gif)
+
+[Local browser version](../../architecture/diagrams/embedding-comparison-method.html)
+
 ## 1. Freeze the inputs
 
 Compare both models on the same 17 English excerpts and three queries. Keep source paths, hashes and offsets. The original run corrected one invalid query/source reference before execution; its relevance labels remain provisional.

@@ -4,6 +4,10 @@
 
 Use the same [Python package](../src/nora/__init__.py), [UI](../ui/package.json) and [Compose file](../compose.yaml) on a development machine or a Linux host. The cloud and Beelink pages describe target considerations; they do not maintain separate application copies.
 
+![The services assembled by the setup instructions.](../architecture/diagrams/container-service-inventory.gif)
+
+[Local browser version](../architecture/diagrams/container-service-inventory.html)
+
 
 ## Accepted target and current interfaces
 

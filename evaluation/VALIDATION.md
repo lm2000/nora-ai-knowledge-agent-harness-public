@@ -2,9 +2,29 @@
 
 [Evaluation](README.md) · [Setup](../setup/README.md) · [Roadmap](../Plan.md)
 
-The September 14, 2026 checks exercise the shared source locally and in an isolated ARM Linux Compose project. Synthetic fixtures contain no private corpus material. This page describes what each check establishes.
+This record separates local source checks, synthetic examples and the earlier
+isolated ARM Linux Compose trial. Synthetic fixtures contain no private corpus
+material. Each dated section states what its checks establish.
 
-## Documentation and diagram consistency — checked 2026-10-21
+![The workflows covered by the validation evidence below.](../architecture/diagrams/harness-workflows.gif)
+
+[Local browser version](../architecture/diagrams/harness-workflows.html)
+
+## Reader-facing documentation pass — checked 2026-10-21
+
+The README now names Michael's application work before a compact system view.
+The detailed architecture remains linked; the Atlas guide states the local
+saved-response boundary before describing external review routes. The roadmap
+and this record distinguish current source checks from earlier dated results.
+
+Local checks pass for 53 public documents, 508 local links and assets, 14
+HTML/GIF diagram pairs and the 200-file source manifest. The new GIF was
+exported from its HTML and inspected. Headless browser checks at 800 and 390
+pixels found no page errors or page-level horizontal overflow and confirmed
+that selecting a node reveals its details. At mobile width the diagram scrolls
+inside its panel to keep labels readable. These checks do not test live services.
+
+## Earlier documentation and diagram consistency — checked 2026-10-21
 
 This documentation-only pass aligns processing contracts and source/deployment
 descriptions, adds the missing question-answering workflow row, removes the
@@ -12,15 +32,16 @@ invented design concept and reorganizes the diagram catalog into three main
 views plus technical detail. Nine changed HTML views have matching regenerated
 GIFs; smaller workflow labels and legends are larger within the existing style.
 
-Local links, ten HTML/GIF pairs and the 192-file source manifest pass. The two
-standalone workflow views pass deterministic checks and browser containment at
-four desktop sizes, with light/dark captures. A separate read-only review found
-remaining old tooltip and activation claims; those were corrected in the same
-pass. Application code, live services and corpus data are unchanged. The dated
+At that pass, local links, ten HTML/GIF pairs and the 192-file source manifest
+passed. The two standalone workflow views passed deterministic checks and
+browser containment at four desktop sizes, with light/dark captures. A separate
+read-only review found remaining old tooltip and activation claims; those were
+corrected in the same pass. Application code, live services and corpus data were
+unchanged. The dated
 configuration reference reconciles saved operating guidance and is not a fresh
 live deployment check.
 
-## Whole-project source review — checked 2026-10-21
+## Earlier whole-project source review — checked 2026-10-21
 
 Two improvement passes reviewed documentation, architecture, workflows, code,
 setup, tests, the embedded UI and public/private source boundaries.
@@ -34,7 +55,7 @@ setup, tests, the embedded UI and public/private source boundaries.
 | A valid large review could produce unreadable revision input | Compact feedback and an explicit output bound are covered by two regression tests |
 | Workspace reference copies blocked public-doc inventory | Exact existing skill-copy paths are classified explicitly; unclassified new documents still fail inventory checks |
 
-**Local results:** 323 Python tests and 11 subtests pass; eight tests skip.
+**Results from that pass:** 323 Python tests and 11 subtests passed; eight tests skipped.
 Lint and formatting, five UI server-boundary tests, TypeScript, the production
 build, shell syntax, local links, ten HTML/GIF pairs and the 192-file source
 release manifest pass. Three upstream dependency deprecation warnings remain.
