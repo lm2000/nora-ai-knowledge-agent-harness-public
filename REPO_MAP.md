@@ -29,9 +29,10 @@ Each topic has one current owner. Superseded material remains available through 
 | [data/](data/Data%20Contract.md) | Public source types and document identity rules |
 | [evaluation/](evaluation/README.md) | Quality protocols, results and known limits |
 | [scripts/](scripts/build_release.py) | Validation, smoke and source-release utilities |
-| `skills/` | Workspace-installed reference copies, identified by their source-origin records; excluded from public releases |
 | `operations/` | Private tracked runbooks and recovery evidence; excluded from public releases |
 | [Publishing](PUBLISHING.md) | Public source snapshot procedure |
+
+Reusable custom skills are maintained in the separate Agentic Tools project.
 
 ## Generated and private state
 
