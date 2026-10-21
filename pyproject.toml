@@ -22,7 +22,7 @@ server = [
 embeddings = ["torch==2.6.0", "transformers==5.16.0"]
 gcs = ["google-cloud-storage==3.13.1"]
 conversion = ["docling==2.126.0"]
-dev = ["pytest==9.0.3", "pytest-asyncio==1.4.0", "ruff==0.16.7", "build==1.6.1", "setuptools==84.0.0", "wheel==0.48.0"]
+dev = ["pytest==9.0.3", "pytest-asyncio==1.4.0", "jsonpatch==1.33", "google-cloud-storage==3.13.1", "ruff==0.16.7", "build==1.6.1", "setuptools==84.0.0", "wheel==0.48.0"]
 
 [project.scripts]
 nora = "nora.cli:main"

@@ -59,6 +59,6 @@ export default function Page() {
         <CopilotChat agentId="assistant" threadId={thread} labels={{welcomeMessageText: 'What would you like to understand from your documents?'}} />
       </CopilotKit>}
     </section>
-    <footer>Check important details against your documents. Prepared knowledge reflects the documents you imported.</footer>
+    <footer>Prepared knowledge reflects the documents you imported.</footer>
   </main>;
 }

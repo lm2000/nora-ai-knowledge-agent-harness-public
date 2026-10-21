@@ -142,11 +142,20 @@ services:
       NIS_MCP_URL: http://coordination:8000/mcp/
       NIS_GATEWAY_TOKEN_FILE: /run/secrets/gateway
       NIS_UPSTREAM_TOKEN_FILE: /run/secrets/internal
+      NORA_OLLAMA_TOKEN_FILE: /run/secrets/ollama
+      NIS_RETRIEVAL_URL: http://retrieval:8001/mcp
+      NIS_RETRIEVAL_TOKEN_FILE: /run/secrets/mcp
+      NIS_POSTGRES_PASSWORD_FILE: /run/secrets/postgres
+      NIS_POSTGRES_HOST: postgres
+      NIS_POSTGRES_PORT: "5432"
+      NIS_POSTGRES_USER: nora
+      NIS_POSTGRES_DB: nora
       LITELLM_TELEMETRY: "false"
-    secrets: [gateway, internal]
+    secrets: [gateway, internal, postgres, ollama, mcp]
     ports: ["127.0.0.1:4000:4000"]
     depends_on:
       coordination: {condition: service_healthy}
+      retrieval: {condition: service_healthy}
     healthcheck:
       test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:4000/health/liveliness', timeout=5)"]
       interval: 15s

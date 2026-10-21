@@ -4,6 +4,89 @@
 
 The September 14, 2026 checks exercise the shared source locally and in an isolated ARM Linux Compose project. Synthetic fixtures contain no private corpus material. This page describes what each check establishes.
 
+## Documentation and diagram consistency — checked 2026-10-21
+
+This documentation-only pass aligns processing contracts and source/deployment
+descriptions, adds the missing question-answering workflow row, removes the
+invented design concept and reorganizes the diagram catalog into three main
+views plus technical detail. Nine changed HTML views have matching regenerated
+GIFs; smaller workflow labels and legends are larger within the existing style.
+
+Local links, ten HTML/GIF pairs and the 192-file source manifest pass. The two
+standalone workflow views pass deterministic checks and browser containment at
+four desktop sizes, with light/dark captures. A separate read-only review found
+remaining old tooltip and activation claims; those were corrected in the same
+pass. Application code, live services and corpus data are unchanged. The dated
+configuration reference reconciles saved operating guidance and is not a fresh
+live deployment check.
+
+## Whole-project source review — checked 2026-10-21
+
+Two improvement passes reviewed documentation, architecture, workflows, code,
+setup, tests, the embedded UI and public/private source boundaries.
+
+| Finding | Change and evidence |
+| --- | --- |
+| The main entry point hid the engineering story | README now leads with the problem, contribution, architecture, workflows, trade-offs and evidence |
+| The roadmap covered only artifact review | Plan.md again covers the whole harness and keeps separate acceptance work visible |
+| Evidence and visual rules were scattered | Evaluation has one index, historical findings retain their dated record, and DESIGN.md records existing visual rules |
+| Diagram export assumed one viewer implementation | The exporter supports both maintained HTML formats; both updated GIFs were regenerated from their HTML |
+| A valid large review could produce unreadable revision input | Compact feedback and an explicit output bound are covered by two regression tests |
+| Workspace reference copies blocked public-doc inventory | Exact existing skill-copy paths are classified explicitly; unclassified new documents still fail inventory checks |
+
+**Local results:** 323 Python tests and 11 subtests pass; eight tests skip.
+Lint and formatting, five UI server-boundary tests, TypeScript, the production
+build, shell syntax, local links, ten HTML/GIF pairs and the 192-file source
+release manifest pass. Three upstream dependency deprecation warnings remain.
+External documentation URLs were inventoried rather than fetched by linkcheck.
+A fresh-context, read-only review of all 23 changed files found no blocking
+defects. It inspected source and documentation; the checks above supply execution
+evidence. The primary checkout's staged entries were preserved exactly.
+
+The browser acceptance script passes ten scenarios against synthetic services,
+including follow-up, history restoration, mobile layout and an unavailable
+backend without losing the selected conversation. Screenshots of these states
+were inspected. All ten diagrams were inspected in the browser; the two changed
+workflow viewers also passed automated checks at four desktop sizes with light
+and dark screenshots. Private receipts are excluded from publication.
+
+This pass does not add real-provider quality measurements, representative
+retrieval results or deployment acceptance. Those remain separately scoped in
+the roadmap. The earlier workflow and deployment records below retain their
+original counts and boundaries.
+
+## Artifact-review workflow — checked 2026-10-21
+
+The local workflow adds saved-response validation, explicit owner-decision and
+revision recording, and a two-version synthetic Atlas example. It does not call
+an inference provider, edit an artifact automatically, or change conversations,
+corpus data, services or refresh automation.
+
+- 321 Python tests pass, eight skip, and 11 subtests pass. New review tests cover
+  invalid identity/quotes/content, null failure scores, duplicate feedback,
+  unknown-fact ownership, input limits, interrupted state, stale decisions,
+  no-change outcomes and linked revisions. Existing runtime contracts also pass.
+- Decisions bind to the exact saved response hash. Regression tests reject
+  decisions reused for another review of the same packet, decisions without
+  that hash, edited feedback and changed saved responses. Revision recording
+  checks receipt hashes and feedback against the original response.
+- All three review CLI commands were exercised from this checkout. The example
+  retains the missing-prerequisite correction, rejects an invented duration and
+  avoids duplicating an existing question. Its reviews and owner decisions are
+  scripted fixtures, not a live judge or measured quality improvement.
+- Both workflow diagrams pass nine deterministic showcase checks with no errors
+  or warnings. Automated browser evidence passes at four desktop sizes; light
+  and dark screenshots were visually inspected. Matching GIF previews come from
+  the actual delivered HTML. Private browser receipts stay outside publication.
+- Lint/format and the 191-file source-release check pass. A clean allowlisted
+  source snapshot passes 52-document link checking, ten HTML/GIF pair checks,
+  source scanning and 42 focused review/CLI tests. In the primary checkout,
+  link/diagram inventory remains blocked by the existing unlisted skills tree.
+
+The separate website source has a local Workflows page using the same diagram
+bytes; its own context records site-specific checks. Neither source change is a
+publication or deployment. Historical validation below retains its original scope.
+
 ## Checked locally
 
 - Python contract tests cover deterministic preparation, exclusions, document hashes, generation-pinned GCS reads through a double, incompatible and corrupted imports, Qdrant round trips, atomic request accounting, routing failures and model-cache validation.
@@ -75,3 +158,28 @@ This isolated checkout completes and reviews the first end-to-end slice of the D
 
 - Docker Compose runtime integration for the four-job/BGE/activation slice was exercised end-to-end on macOS with deterministic doubles; the previously passed ARM Linux five-service trial remains evidence for that stack.
 - Real GCS bucket creation, credentials and upload are not exercised; local verification uses the `FakeGCSClient` double.
+
+## Historical answer-quality investigation — 2026-10-06
+
+The following entries are preserved from the earlier evaluation index. Their dated
+rollout/local states are historical; current source work is tracked in the roadmap.
+
+The single-assistant candidate has bounded direct/gateway, UUID continuity, restart and Codex/OpenClaw conversational evidence in [deployment status](../setup/private-deployment/STATUS.md). Those passes establish the exercised client paths, not representative answer quality. The October 6 preparation answer passed its dated acceptance check, but a later exact-question repeat omitted requested preservation fields. The eight-case quality pilot recorded four passes after correcting four cloud-judge false positives; source freshness, source selection, answer coverage and generation completeness need improvement. These development questions and an uncalibrated model-assisted review do not estimate production accuracy. Owner review remains pending. See [execution progress](../Plan.md#execution-progress). Repeat affected client checks after interface changes, and retain passing historical evidence when behavior is unchanged. Repeated benchmarks and clean-server restoration remain later work in [the roadmap](../Plan.md).
+
+The focused completion/shared-repair/owning-guide correction is implemented locally on October 6: 44 service/selector tests passed, with existing retrieval and logical model-call budgets. This is fixture verification; rollout and repeated live Q2/P4/follow-up acceptance remain pending. See the current [execution progress](../Plan.md#execution-progress).
+
+The subsequent October 6 Coordination-only rollout failed the four-turn quality sample: Q2a/follow-up returned 503; Q2b passed at 83 words and P4 at 99 words. Empty repair generations hit the existing token cap and were rejected; untitled owning-passage identification and model-configuration synonyms need correction. This quality delta remains unaccepted and unpublished. See [deployment evidence](../setup/private-deployment/STATUS.md#focused-quality-correction-rollout-acceptance-failed--2026-10-06).
+
+A subsequent local-only refinement recognizes distinctive untitled preservation contracts without treating broader ingestion headings as the owning guide, requests a returned-ID read for missing attribution/fields, and accepts pinned revision/dimensions/normalization with vectors. 56 focused service/selector tests passed; this refinement is not deployed or accepted through inference. See [current execution progress](../Plan.md#execution-progress).
+
+
+Quality refinement rollout (2026-10-06): Coordination image `quality-refinement-20261006` / `sha256:920485192ed9cd35fc49b745458793055203c1271b3f188d4a4315b58fb7b5a4` is healthy; existing history/corpus/other services and limits retained. Three preparation turns produced one pass (78/100 words) and two HTTP 503 failures. Failed-turn checks exposed substantive-content synonym rejection and a follow-up repair missing deterministic/no-rewrite and explicit source identity. Quality remains unaccepted; publication and primary synchronization remain pending. No extra trials; prior passing storage comparison retained. Canonical Operations Guidance contains the dated receipt/report reference.
+
+
+Local preparation follow-up correction (2026-10-06): 67 focused tests and saved failed-draft replay pass. Supported substantive-content/boilerplate-aside wording is accepted; related restatement guidance retains all six facts. Genuine omissions remain rejected. This correction is undeployed and unpublished; running image 92048519 remains healthy but unaccepted. Real-model follow-up compliance and publication/primary synchronization remain pending. See canonical Operations Guidance for the dated result.
+
+
+Preparation follow-up rollout (2026-10-06): Coordination image `preparation-followup-20261006` / `sha256:ffed46272d5e0798a6308410c8e7cc8f9dcdc29f7fb22346a8da146ecb02684f` is healthy; history/corpus/other services/settings retained. Both fresh Q2 calls failed with HTTP 503; follow-up returned all six facts/attribution at 87/100 words with an unsupported exhaustive opening. Initial first generation exhausted its token limit before repair. Second failure remains undiagnosed after a latest-turn diagnostic mistakenly read the successful follow-up; that boundary deviation is recorded in canonical Operations Guidance. Repeated preparation quality remains unaccepted; no publication or primary sync occurred.
+
+
+Isolated GPT-OSS:20b pilot (2026-10-06) stopped on its first failed preparation turn. Three searches exhausted retrieval before an owning-guide read; draft/source attribution were deficient and the repair returned empty with a normal stop. No production route change; remaining turns not run. Four distinct provider responses reported 18,949 prompt / 508 generated tokens, 10.291 seconds; billing unmeasured. Candidate quality is unaccepted. See current execution progress and canonical Operations Guidance for the private result reference.

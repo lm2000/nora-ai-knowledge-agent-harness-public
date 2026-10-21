@@ -14,7 +14,7 @@
     "SECURITY.md",
     "Templates/Project Template.md",
     "agents/README.md",
-    "architecture/Architecture Concept.md",
+    "architecture/architecture-concept.md",
     "architecture/Requirements.md",
     "architecture/Research and Design Inputs.md",
     "architecture/diagrams/README.md",
@@ -51,11 +51,65 @@
     "setup/private-deployment/ROLLOUT.md",
     "setup/private-deployment/STATUS.md",
     "workflows/ingestion/README.md",
-    "workflows/ingestion/knowledge-base-update-checklist.md"
+    "workflows/ingestion/knowledge-base-update-checklist.md",
+    "workflows/README.md",
+    "workflows/artifact-review/README.md",
+    "DESIGN.md"
   ],
   "excluded_documents": [
     "operations/README.md",
-    "operations/google-cloud/nora-app-02.md"
+    "operations/google-cloud/nora-app-02.md",
+    "skills/career-triage/SKILL.md",
+    "skills/career-workspace/SKILL.md",
+    "skills/composio/SKILL.md",
+    "skills/composio/references/composio-app-connections/GUIDE.md",
+    "skills/composio/references/composio-app-connections/references/connection-flows.md",
+    "skills/composio/references/composio-cli/GUIDE.md",
+    "skills/composio/references/composio-cli/references/composio-dev.md",
+    "skills/composio/references/composio-cli/references/power-user-examples.md",
+    "skills/composio/references/composio-cli/references/troubleshooting.md",
+    "skills/composio/references/composio/GUIDE.md",
+    "skills/composio/references/composio/references/errors.md",
+    "skills/composio/references/composio/references/for-you.md",
+    "skills/composio/references/composio/references/platform.md",
+    "skills/diagrams/SKILL.md",
+    "skills/diagrams/references/archify/GUIDE.md",
+    "skills/diagrams/references/archify/THIRD_PARTY_NOTICES.md",
+    "skills/diagrams/references/archify/brand-marks/README.md",
+    "skills/diagrams/references/archify/references/authoring-contract.md",
+    "skills/diagrams/references/archify/references/brand-marks.md",
+    "skills/diagrams/references/archify/references/delivery-contract.md",
+    "skills/diagrams/references/archify/references/viewer-runtime.md",
+    "skills/diagrams/references/archify/renderers/dataflow/README.md",
+    "skills/diagrams/references/archify/renderers/lifecycle/README.md",
+    "skills/diagrams/references/archify/renderers/sequence/README.md",
+    "skills/diagrams/references/archify/renderers/workflow/README.md",
+    "skills/diagrams/references/archify/schemas/README.md",
+    "skills/diagrams/references/document-previews/GUIDE.md",
+    "skills/diagrams/references/excalidraw/GUIDE.md",
+    "skills/diagrams/references/excalidraw/references/authoring-rules.md",
+    "skills/diagrams/references/excalidraw/references/format.md",
+    "skills/diagrams/references/excalidraw/references/official-excalidraw.md",
+    "skills/diagrams/references/excalidraw/references/quality-gate.md",
+    "skills/diagrams/references/excalidraw/references/visual-layouts.md",
+    "skills/interview-audio-briefings/SKILL.md",
+    "skills/interview-audio-briefings/references/elevenlabs-execution.md",
+    "skills/interview-practice/SKILL.md",
+    "skills/interview-review/SKILL.md",
+    "skills/interview-review/assets/Advisory_Call_Prep.template.md",
+    "skills/interview-review/references/advisory-feedback.md",
+    "skills/interview-review/references/final-round.md",
+    "skills/interview-review/references/hoppers.md",
+    "skills/interview-stage/SKILL.md",
+    "skills/interview-stage/references/frai.md",
+    "skills/interview-stage/references/hoppers.md",
+    "skills/interview-system-admin/SKILL.md",
+    "skills/next-step-recommendations/SKILL.md",
+    "skills/resume/SKILL.md",
+    "skills/resume/references/resume-judge/GUIDE.md",
+    "skills/resume/references/resume-positioning-review/GUIDE.md",
+    "skills/resume/references/resume-positioning-review/references/workflow-context.md",
+    "operations/knowledge-refresh/README.md"
   ],
   "supporting_files": [
     "LICENSE",
@@ -76,7 +130,11 @@
     "architecture/diagrams/private-rollout.html",
     "architecture/diagrams/private-rollout.gif",
     "architecture/diagrams/ingestion-workflow.html",
-    "architecture/diagrams/ingestion-workflow.gif"
+    "architecture/diagrams/ingestion-workflow.gif",
+    "architecture/diagrams/artifact-review-flow.html",
+    "architecture/diagrams/artifact-review-flow.gif",
+    "architecture/diagrams/harness-workflows.html",
+    "architecture/diagrams/harness-workflows.gif"
   ],
   "mermaid_blocks": {},
   "diagram_pairs": [
@@ -111,6 +169,14 @@
     {
       "source": "architecture/diagrams/ingestion-workflow.html",
       "preview": "architecture/diagrams/ingestion-workflow.gif"
+    },
+    {
+      "source": "architecture/diagrams/artifact-review-flow.html",
+      "preview": "architecture/diagrams/artifact-review-flow.gif"
+    },
+    {
+      "source": "architecture/diagrams/harness-workflows.html",
+      "preview": "architecture/diagrams/harness-workflows.gif"
     }
   ]
 }

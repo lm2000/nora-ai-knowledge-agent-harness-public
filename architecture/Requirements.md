@@ -1,6 +1,6 @@
 # Application requirements
 
-[Home](../README.md) · [Architecture](Architecture%20Concept.md) · [Roadmap](../Plan.md)
+[Home](../README.md) · [Architecture](architecture-concept.md) · [Roadmap](../Plan.md)
 
 A useful first result is a brief grounded in the selected documents, with the correct target, a clear answer and explicit gaps. This page states desired behavior; the [evaluation index](../evaluation/README.md) identifies the evidence available for it.
 

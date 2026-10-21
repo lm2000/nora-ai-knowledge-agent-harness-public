@@ -26,17 +26,20 @@ async function main() {
       const errors = [];
       const onError = error => errors.push(error.message);
       page.on('pageerror', onError);
-      await page.goto(pathToFileURL(path.join(root, pair.source)).href);
-      for (let frame = 0; frame < 30; frame++) {
-        await page.evaluate(time => window.freezeDiagram(time), frame / 6);
-        await page.locator('#export').screenshot({ path: path.join(temporary, `${String(frame).padStart(3, '0')}.png`) });
+      await page.goto(pathToFileURL(path.join(root, pair.source)).href + '?theme=light&embed=1');
+      const animated = await page.evaluate(() => typeof window.freezeDiagram === 'function');
+      const frameDirectory = fs.mkdtempSync(path.join(temporary, 'frames-'));
+      const target = animated ? '#export' : '.diagram-container';
+      for (let frame = 0; frame < (animated ? 30 : 1); frame++) {
+        if (animated) await page.evaluate(time => window.freezeDiagram(time), frame / 6);
+        await page.locator(target).screenshot({ path: path.join(frameDirectory, `${String(frame).padStart(3, '0')}.png`) });
       }
       page.off('pageerror', onError);
       if (errors.length) throw new Error(`${pair.source}: ${errors.join('; ')}`);
       const preview = path.join(root, pair.preview);
       execFileSync(process.env.NIS_FFMPEG || 'ffmpeg', [
         '-hide_banner', '-loglevel', 'error', '-y', '-framerate', '6',
-        '-i', path.join(temporary, '%03d.png'), '-vf',
+        '-i', path.join(frameDirectory, '%03d.png'), '-vf',
         'split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3',
         '-loop', '0', preview,
       ]);

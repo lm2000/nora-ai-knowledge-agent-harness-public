@@ -1,6 +1,6 @@
 # NIS assistant
 
-[Home](../README.md) · [Architecture](../architecture/Architecture%20Concept.md) · [Coordination](../setup/containers/coordination.md)
+[Home](../README.md) · [Architecture](../architecture/architecture-concept.md) · [Coordination](../setup/containers/coordination.md)
 
 One assistant answers questions about saved material, compares documents and applies follow-up corrections in separate topic conversations. For example, ask for an Atlas handover brief, then ask which decisions still need an owner. Research and interview analysis are tasks rather than separately selectable roles.
 
@@ -22,4 +22,4 @@ Preparation follow-ups should restate the supported preservation fields and incl
 
 ## Evaluation
 
-Check target selection, relevant evidence, omissions, user corrections, conversation continuation and explicit answer limits. [Deployment status](../setup/private-deployment/STATUS.md) records the bounded Codex/OpenClaw conversational passes and their limits; [evaluation](../evaluation/README.md) owns representative quality work. The [2026-10-13 isolated acceptance](../Plan.md#latest-isolated-acceptance--2026-10-13) passed two fresh preparation questions and one follow-up on gpt-oss:20b; deployment acceptance and representative quality evaluation remain separate.
+Check target selection, relevant evidence, omissions, user corrections, conversation continuation and explicit answer limits. [Deployment status](../setup/private-deployment/STATUS.md) records the bounded Codex/OpenClaw conversational passes and their limits; [evaluation](../evaluation/README.md) owns representative quality work. The 2026-10-13 isolated acceptance check passed two fresh preparation questions and one follow-up on gpt-oss:20b; deployment acceptance and representative quality evaluation remain separate.

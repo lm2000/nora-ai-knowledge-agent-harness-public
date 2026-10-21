@@ -1,68 +1,105 @@
 # Nora Intelligence System — Knowledge & Agent Harness
 
-Nora Intelligence System (NIS) is a private, self-hosted knowledge assistant from Nora SuperIntelligence Lab. It retrieves relevant passages from a prepared document collection, answers through a Deep Agent, and keeps conversation history in PostgreSQL.
+A personal knowledge assistant built around a practical problem: answering from
+changing documents while preserving conversation history, source identity and
+control over updates.
 
-**Example:** ask “What still blocks the Atlas release?” Nora finds the fictional Atlas plan and decisions, then answers that the load test and rollback rehearsal remain.
+This is Michael Lvov's independent engineering project. The repository shows
+application code, architecture decisions, reproducible synthetic examples and
+bounded evaluation results.
 
-One assistant handles separate topic conversations. Clients use `ask_nis(question, thread_id=None)` through a separate LiteLLM MCP gateway or directly through FastMCP embedded in Coordination. Both paths share the same runtime and PostgreSQL conversation lifecycle. See the [Coordination guide](setup/containers/coordination.md#selected-one-assistant-target--2026-10-02) for the interface.
+## The system
 
-## From question to answer
+**Example:** “What still blocks the Atlas release?” The assistant retrieves the
+fictional release plan and decisions, identifies the load test and rollback
+rehearsal, and can continue the same conversation.
 
-![A user question flows through the Nora UI and agent to retrieval and the answer model; conversation state is saved in PostgreSQL.](architecture/diagrams/conversation.gif)
+![NIS clients reach one assistant runtime, which uses shared retrieval, model adapters and PostgreSQL conversation checkpoints.](architecture/diagrams/01-system-architecture.gif)
 
-[Local browser version](architecture/diagrams/conversation.html) · [Architecture](architecture/Architecture%20Concept.md)
+[Local browser version](architecture/diagrams/01-system-architecture.html) · [Architecture and trade-offs](architecture/architecture-concept.md)
 
-The main runtime has five responsibilities:
+One assistant serves separate topic conversations. A Next.js/CopilotKit UI and
+MCP clients reach the same Coordination operation, directly or through a separate
+LiteLLM gateway. Retrieval combines shared BGE embeddings, Qdrant and prepared
+source text. PostgreSQL stores LangGraph conversation checkpoints.
 
-- **UI:** Next.js, CopilotKit and AG-UI.
-- **Agent:** LangChain/LangGraph Deep Agent inside Coordination.
-- **Retrieval:** BGE embeddings and Qdrant search through MCP.
-- **Memory:** PostgreSQL conversation checkpoints.
-- **Inference:** Ollama Cloud and Fireworks.ai, with optional local Ollama.
+## Project implementation and upstream foundations
 
-## Updating knowledge
+Michael built the application layer connecting retrieval, persistent
+conversations, controlled knowledge updates and traceable artifact reviews.
 
-Knowledge updates run separately from conversations: select sources, convert and prepare them, embed, then import and verify a complete release before activation. Additions are assembled with the retained corpus. Follow [Run an update](workflows/ingestion/knowledge-base-update-checklist.md) for the current local deployment or [How ingestion works](workflows/ingestion/README.md) for the technical contracts; GCS cutover remains pending.
-
-![Selected originals are converted and normalized, then embedded and imported into Qdrant.](architecture/diagrams/manual-ingestion.gif)
-
-[Local browser version](architecture/diagrams/manual-ingestion.html) · [Run an update](workflows/ingestion/knowledge-base-update-checklist.md) · [Understand the pipeline](workflows/ingestion/README.md)
-
-## Current state
-
-| Area | State |
+| Project work | Foundation it uses |
 | --- | --- |
-| Single assistant and browser UI | Implemented in source; validated with synthetic fixtures and local UI tests |
-| Shared retrieval over MCP | Implemented; BGE/Qdrant search and read tested with synthetic data |
-| PostgreSQL conversation persistence | Implemented; checkpoint continuity tested with local fixtures |
-| Provider abstraction and selection | Implemented; Ollama Cloud and Fireworks.ai supported, optional local Ollama |
-| Ingestion maintenance | Four-stage container workflow implemented; routine live GCS refresh pending |
-| Repeatable tests and limits | Synthetic contract tests, UI checks, lint, link and release checks are provided |
-| Answer quality | Synthetic smoke passes; representative private evaluation remains open |
+| Conversation ownership, context limits, answer checks and MCP entrance | Deep Agents, LangChain, LangGraph and FastMCP |
+| Source preparation, document identity, hybrid ranking and bounded search/read | BGE, Qdrant and MCP |
+| Provider adapters, capability selection and bounded fallback | LangChain model interfaces and configured inference providers |
+| Browser integration, origin checks and server-side credential handling | Next.js, CopilotKit and AG-UI |
+| Separate ingestion jobs, release verification and explicit activation | Python, Docker Compose and operator-selected storage |
+| Saved-review validation, exact-response owner decisions and revision records | A small offline evaluation workflow |
 
-The exact evidence boundary is in [Validation](evaluation/VALIDATION.md) and [Private deployment status](setup/private-deployment/STATUS.md). Source implementation does not by itself prove a live rollout. The latest local repair and heading-whitespace correction passed two fresh preparation questions and one follow-up in an isolated Ollama Cloud gpt-oss:20b check on 2026-10-13. Earlier failures and exact source boundaries are retained in the [repair record](Plan.md#unresolved-repair-outcome). The correction was subsequently deployed on the private glm-5.3-flash route; two fresh gateway questions and a follow-up passed at 71, 79 and 91 words, with existing history and corpus counts unchanged. The later named-guide and follow-up correction passed a separate six-case isolated check on 2026-10-13. Its October 14 rollout failed two of three selected wording checks and was rolled back to the prior image. This bounded result does not establish general reliability. Enterprise shared memory across harnesses, Kubernetes/SSO, commercial scale and measured customer AI latency are unimplemented/unverified.
+The project supplies the application boundaries and integration code; upstream
+frameworks supply agent execution, persistence primitives, protocols and models.
+[Repository map](REPO_MAP.md) identifies the implementation owners.
 
-## Run the source
+## Three workflows
 
-Use Python 3.12, Node.js 22.22 or newer, and pnpm 12.8.1. From the repository root:
+| Workflow | Example | Result |
+| --- | --- | --- |
+| [Question answering](agents/README.md) | Ask about Atlas and continue the conversation | A supported answer and retained conversation |
+| [Knowledge ingestion](workflows/ingestion/README.md) | Add a revised guide with the retained corpus | A verified knowledge release |
+| [Artifact evaluation and revision](workflows/artifact-review/README.md) | Review a draft briefing against its source plan | Feedback, owner decisions and a retained or revised version |
+
+Artifact review uses small iterations: draft → review → decision → revision.
+Accepted changes improve the material; retained lessons improve the next review
+brief. Its guide explains judges, datasets, Harbor Hub and inference-provider
+roles. The local commands replay saved responses rather than call those services.
+
+## Engineering decisions
+
+| Choice | Reason and trade-off |
+| --- | --- |
+| One assistant with topic checkpoints | Clients share a runtime and lifecycle; this is a private single-user system |
+| Shared BGE for ingestion and retrieval | One representation boundary; batch and interactive encoding need admission control |
+| Manual ingestion outside conversations | Updates are inspectable and separately activated; source freshness needs an operator procedure |
+| Bounded tools, model calls and output repair | Failures remain explicit; strict limits can reject incomplete answers |
+| Owner-directed artifact review | Feedback is traceable to a version; model opinions still require human judgment |
+
+See [Decisions](Decisions.md) for the accepted choices and
+[Requirements](architecture/Requirements.md) for their behavior contracts.
+
+## Evidence
+
+| Evidence | What it establishes |
+| --- | --- |
+| [Source validation](evaluation/VALIDATION.md) | Synthetic application contracts, framework integration, CLI and UI checks |
+| [CPU embedding comparison](evaluation/embeddings/RESULTS.md) | BGE throughput of 12.87 vs 2.73 excerpts/s for Qwen on 17 excerpts; a small historical CPU experiment |
+| [Retrieval experiments](evaluation/README.md) | Small-set ranking results and misses, with corpus and method boundaries preserved |
+| [Private deployment record](setup/private-deployment/STATUS.md) | Dated client and service checks, separate from source tests |
+
+Retrieval relevance, generated-answer quality and execution correctness are
+separate questions. These results do not establish representative answer
+accuracy, enterprise scale or general provider superiority.
+
+## Try a credential-free example
+
+After [installing the source](setup/README.md#install-for-development), run from
+the repository root with a new output directory:
 
 ```bash
-conda create -n nora-ai python=3.12 pip
-conda run -n nora-ai python -m pip install -c requirements.lock -e '.[server,gcs,dev]'
-mise trust
-pnpm --dir ui install --frozen-lockfile
-make validate
+nora review-example --output .private/atlas-review-cycle
 ```
 
-These checks use synthetic documents and model doubles. Follow [Setup](setup/README.md) for the application and real retrieval smoke test.
+Expected result: two synthetic reviews, explicit decisions and the corrected
+Atlas briefing. The example adds a missing prerequisite, rejects invented timing
+and avoids duplicating an existing section. No model request is made.
 
-## Where to go next
+For the application, real-embedding smoke test and configuration, follow
+[Setup](setup/README.md). [Contributing](CONTRIBUTING.md) owns development checks.
 
-1. [Roadmap](Plan.md) — current priorities only.
-2. [Repository map](REPO_MAP.md) — owner for each part of the project.
-3. [Architecture](architecture/Architecture%20Concept.md) and [diagrams](architecture/diagrams/README.md) — design and boundaries.
-4. [Setup](setup/README.md) and [containers](setup/containers/README.md) — runtime and deployment.
-5. [Evaluation](evaluation/README.md) — quality checks and known limits.
-6. [Decisions](Decisions.md) — accepted architecture and historical rationale.
+## Explore further
 
-Nora uses the [MIT license](LICENSE). Preserve [upstream notices](NOTICE.md) and [Templates/LICENSE](Templates/LICENSE). The included examples are fictional fixtures.
+- [Architecture](architecture/architecture-concept.md) and [diagrams](architecture/diagrams/README.md)
+- [Workflows](workflows/README.md) and [evaluation](evaluation/README.md)
+- [Roadmap](Plan.md), [repository map](REPO_MAP.md) and [configuration](setup/configuration.md)
+
+MIT licensed. Preserve [upstream notices](NOTICE.md) and [Templates/LICENSE](Templates/LICENSE).

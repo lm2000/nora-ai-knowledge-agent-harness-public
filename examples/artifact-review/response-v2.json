@@ -1,0 +1,12 @@
+{
+  "model": "scripted-reviewer",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "{\"schema_version\": 1, \"packet_sha256\": \"e5bce5c351a452ff602211a3f68bacd40c3d5982e1b172af736af87c1f4b4fff\", \"artifact_version\": \"atlas-v2\", \"artifact_sha256\": \"37d8780b9bdb2cacc9f9a835e25daaa172fc093ab37135a59d6fa1dac435978a\", \"rubric_version\": \"atlas-briefing-1\", \"persona\": \"Evidence reviewer\", \"score\": 3, \"rationale\": \"Both source prerequisites are present. No further change is requested under this fixture rubric.\", \"limitations\": [\"Synthetic saved response; no model inference or calibrated quality score.\"], \"findings\": []}"
+      }
+    }
+  ]
+}

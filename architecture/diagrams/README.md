@@ -1,10 +1,73 @@
-# Editable architecture diagrams
+# Architecture and workflow diagrams
 
-These views explain the accepted [one-assistant target](../../Decisions.md#selected-target-one-assistant-with-a-gateway-backed-mcp-entrance), current reference deployment and separate manual ingestion workflow. For example, the conversation views show a new topic UUID passing through the gateway or direct FastMCP entrance into NIS. The core entrance is implemented and running in the dated private candidate; optional diagram paths remain target views and [current source and deployment evidence](../../setup/containers/README.md#current-implementation) remains separate.
+Start with these three views: the system, one request and the workflows.
+They describe source responsibilities. The dated [deployment record](../../setup/private-deployment/STATUS.md#configuration-reference--2026-10-21) owns installation state.
 
-Maintain one HTML file with inline SVG as the editable source and one GIF derived from it. Open the HTML locally in a browser to use its interactive view; a repository HTML link displays source. Regenerate and visually inspect its GIF whenever the HTML changes. Separate SVG, Excalidraw and Mermaid files are not maintained.
+## System architecture
+
+See the components and their boundaries. The gateway is a supported source path;
+the selected deployment is recorded separately.
+
+![System architecture](01-system-architecture.gif)
+
+[Local browser version](01-system-architecture.html)
+
+## Request path
+
+Follow one question through retrieval, model inference and conversation state.
+
+![One request through NIS](architecture-request-path.gif)
+
+[Local browser version](architecture-request-path.html)
+
+## Harness workflows
+
+Compare question answering, knowledge ingestion and artifact evaluation and revision.
+Ingestion and artifact review run separately from conversations.
+
+![One harness, different workflows](harness-workflows.gif)
+
+[Local browser version](harness-workflows.html)
+
+## Detailed views
+
+### Question to answer
+
+Tool and optional branch detail for the request view. [GIF preview](02-question-to-answer.gif) · [Local browser version](02-question-to-answer.html)
+
+### Conceptual conversation
+
+Client entrances and conversation continuity. [GIF preview](conversation.gif) · [Local browser version](conversation.html)
+
+### Knowledge-update overview
+
+The four manual ingestion jobs and activation boundary. [GIF preview](manual-ingestion.gif) · [Local browser version](manual-ingestion.html)
+
+### Service inventory
+
+Source container responsibilities and storage. [GIF preview](container-service-inventory.gif) · [Local browser version](container-service-inventory.html)
+
+### Selected rollout and later recovery
+
+A reference procedure for a separate target. [GIF preview](private-rollout.gif) · [Local browser version](private-rollout.html)
+
+### Operator knowledge update
+
+The local-pin activation example. [GIF preview](ingestion-workflow.gif) · [Local browser version](ingestion-workflow.html)
+
+### Artifact evaluation and revision
+
+Review configuration, Harbor Hub/direct execution options, judge providers,
+owner decisions and retained lessons. The [workflow guide](../../workflows/artifact-review/README.md) owns the local saved-response command boundary.
+
+![Artifact review and revision cycle](artifact-review-flow.gif)
+
+[Local browser version](artifact-review-flow.html)
 
 ## Refresh a GIF
+
+Maintain one editable HTML file with inline SVG and one matching GIF. A repository
+HTML link displays source; open the file locally in a browser for interaction.
 
 From the repository root, with Playwright, Chromium and FFmpeg available:
 
@@ -12,56 +75,11 @@ From the repository root, with Playwright, Chromium and FFmpeg available:
 node scripts/export_diagrams.cjs 01-system-architecture
 ```
 
-Expected result: the matching GIF is regenerated from thirty frames of its actual HTML view. Omit the stem to export all pairs. `NODE_PATH` can point to an existing Playwright installation; `NIS_BROWSER_EXECUTABLE` and `NIS_FFMPEG` can select existing executables. These are operator-specific runtime paths, not repository defaults. Temporary capture frames are removed after export.
+Expected result: a GIF derived from that HTML, with thirty frames for a legacy
+animated view or one frame for a standalone workflow viewer. Omit the stem to
+export all pairs. `NODE_PATH`, `NIS_BROWSER_EXECUTABLE` and `NIS_FFMPEG` may select
+existing dependencies. Temporary frame directories are separate and removed.
+Regenerate and visually inspect previews after changing HTML. Separate SVG,
+Excalidraw and Mermaid files are not maintained.
 
-## System architecture
-
-![System architecture](01-system-architecture.gif)
-
-[Local browser version](01-system-architecture.html)
-
-## Question to answer
-
-![Question to answer](02-question-to-answer.gif)
-
-[Local browser version](02-question-to-answer.html)
-
-## Conceptual conversation
-
-![Conceptual conversation](conversation.gif)
-
-[Local browser version](conversation.html)
-
-## Knowledge-update overview
-
-![Conceptual ingestion](manual-ingestion.gif)
-
-[Local browser version](manual-ingestion.html)
-
-## Request path
-
-![Request path](architecture-request-path.gif)
-
-[Local browser version](architecture-request-path.html)
-
-## Service inventory
-
-![Service inventory](container-service-inventory.gif)
-
-[Local browser version](container-service-inventory.html)
-
-## Selected rollout and later recovery
-
-![Selected rollout and later recovery](private-rollout.gif)
-
-[Local browser version](private-rollout.html)
-
-## Operator knowledge update
-
-![Five-step knowledge update with database backups](ingestion-workflow.gif)
-
-[Local browser version](ingestion-workflow.html)
-
-The conversation path owns execution and PostgreSQL checkpoints. Ingestion owns independent job reports and starts only on an operator command. Retrieval and batch embedding share BGE; the index and prepared documents advance together. The dedicated GCS deployment and local retained-corpus route remain distinct.
-
-Sources: [architecture](../Architecture%20Concept.md), [assistant](../../agents/README.md), [service inventory](../../setup/containers/README.md), [manual workflow](../../workflows/ingestion/README.md) and [roadmap](../../Plan.md).
+Sources: [architecture](../architecture-concept.md), [assistant](../../agents/README.md), [services](../../setup/containers/README.md), [ingestion](../../workflows/ingestion/README.md) and [roadmap](../../Plan.md).

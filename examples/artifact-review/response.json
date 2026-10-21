@@ -1,0 +1,12 @@
+{
+  "model": "scripted-reviewer",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "message": {
+        "role": "assistant",
+        "content": "{\"schema_version\": 1, \"packet_sha256\": \"5c83c563ec8604dfd6a4d7c95398d5e788cea17783e4a93b1fd0c3300e2afbee\", \"artifact_version\": \"atlas-v1\", \"artifact_sha256\": \"b3fbcfcae91791de0247df3e8350919c6c7e2aec31fa2b9d031791c697f89533\", \"rubric_version\": \"atlas-briefing-1\", \"persona\": \"Evidence reviewer\", \"score\": 3, \"rationale\": \"The draft needs one prerequisite. Other suggestions require owner judgment. Scripted fixture only.\", \"limitations\": [\"Synthetic saved response; no model inference or calibrated quality score.\"], \"findings\": [{\"id\": \"F1\", \"anchor\": \"prerequisites\", \"quote\": \"Atlas release requires a passing payment-service load test.\", \"source_doc_id\": \"f1dc7de37b3482392d1f0d98b85ee63b6e00c36f1d15b282cf060fbccc7202c3\", \"source_quote\": \"that test passes and the rollback rehearsal is complete.\", \"issue\": \"The draft omits the source requirement for a rollback rehearsal.\", \"recommendation\": \"Add the completed rollback rehearsal as a release prerequisite.\", \"kind\": \"defect\", \"resolution_owner\": \"author\"}, {\"id\": \"F2\", \"anchor\": \"prerequisites\", \"quote\": \"Atlas release requires a passing payment-service load test.\", \"source_doc_id\": \"f1dc7de37b3482392d1f0d98b85ee63b6e00c36f1d15b282cf060fbccc7202c3\", \"source_quote\": \"that test passes and the rollback rehearsal is complete.\", \"issue\": \"A fixed short release duration might sound more actionable.\", \"recommendation\": \"Promise the release takes five minutes.\", \"kind\": \"optional\", \"resolution_owner\": \"author\"}, {\"id\": \"F3\", \"anchor\": \"questions\", \"quote\": \"Open questions: release duration is not documented.\", \"source_doc_id\": \"f1dc7de37b3482392d1f0d98b85ee63b6e00c36f1d15b282cf060fbccc7202c3\", \"source_quote\": \"that test passes and the rollback rehearsal is complete.\", \"issue\": \"The reader should see an open-questions section.\", \"recommendation\": \"Add an open-questions section.\", \"kind\": \"optional\", \"resolution_owner\": \"author\"}]}"
+      }
+    }
+  ]
+}

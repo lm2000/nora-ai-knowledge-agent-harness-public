@@ -2,6 +2,13 @@ FROM python:3.12.12-slim-bookworm@sha256:593bd06efe90efa80dc4eee3948be7c0fde4134
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 LITELLM_TELEMETRY=false
 WORKDIR /app
 COPY deploy/gateway.lock /app/gateway.lock
-RUN pip install --no-cache-dir -c gateway.lock 'litellm[proxy]==1.103.2'
-COPY deploy/gateway.py deploy/gateway.yaml /app/
+RUN pip install --no-cache-dir -c gateway.lock 'litellm[proxy]==1.103.2' 'prisma==0.15.0'
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libatomic1 \
+    && rm -rf /var/lib/apt/lists/*
+ENV PRISMA_BINARY_CACHE_DIR=/opt/prisma-binaries
+RUN mkdir -p /opt/prisma-binaries \
+    && prisma generate --schema /usr/local/lib/python3.12/site-packages/litellm/proxy/schema.prisma \
+    && chmod -R a+rx /opt/prisma-binaries
+COPY deploy/gateway.py deploy/gateway.yaml deploy/gateway_web.py deploy/gateway_streaming.py /app/
 ENTRYPOINT ["python", "/app/gateway.py"]

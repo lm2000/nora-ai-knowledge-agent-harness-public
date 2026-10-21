@@ -1,6 +1,6 @@
 # Container and service inventory
 
-[Home](../../README.md) · [Architecture](../../architecture/Architecture%20Concept.md) · [Setup](../README.md)
+[Home](../../README.md) · [Architecture](../../architecture/architecture-concept.md) · [Setup](../README.md)
 
 A question reaches one NIS assistant, then shared Retrieval MCP and the answer provider. For example, a browser question and a gateway UUID follow-up continue the same assistant conversation. This page owns the [Compose](../../compose.yaml) service boundaries; [Coordination](coordination.md) owns the client contract.
 
@@ -34,7 +34,7 @@ Bound batch size, outstanding requests and worker concurrency. The shared servic
 | Resource | Owner and purpose | Placement |
 | --- | --- | --- |
 | Original documents | Operator; unchanged source versions | Existing source storage |
-| Prepared full documents and manifest | Preparation; full text and source identity for Retrieval `read` | Local retained release; dedicated GCS bucket pending |
+| Prepared full documents and manifest | Preparation; full text and source identity for Retrieval `read` | Configured local release or generation-pinned GCS objects |
 | Extracted text, chunks, vectors and job reports | Manual ingestion; durable stage handoffs and recovery evidence | Job artifact storage, mounted or accessed by API |
 | Search index | Qdrant; derived data rebuildable from prepared artifacts | Qdrant data volume |
 | Conversation checkpoints | PostgreSQL; independent from ingestion state | PostgreSQL data volume |
@@ -42,7 +42,7 @@ Bound batch size, outstanding requests and worker concurrency. The shared servic
 | Ollama Cloud | External answer inference route | Provider API outside the Docker host |
 | Fireworks.ai | External answer inference route | Provider API outside the Docker host |
 
-GCS and filesystem/database volumes are storage, not Docker containers. The selected target uses a dedicated GCS bucket for prepared full documents; the private retained-corpus deployment currently uses local prepared files. Original documents, prepared full text, vectors and the live search index have distinct lifecycles. No ingestion broker or scheduler is selected.
+GCS and filesystem/database volumes are storage, not Docker containers. Prepared full documents can use a local release or a dedicated GCS bucket; the dated deployment record owns the selected installation. Original documents, prepared full text, vectors and the live search index have distinct lifecycles. No ingestion broker or scheduler is selected.
 
 ## Current implementation
 
@@ -50,7 +50,7 @@ Root Compose currently defines seven default persistent containers: ui, coordina
 
 The retrieval service calls the shared bge service for query encoding. The batch embedding job calls the same service in document mode. Both modes share the pinned model revision, dimension and normalization; query instructions are applied only in query mode.
 
-Prepared full documents use the local filesystem in this slice. The dedicated GCS bucket selected in D169 is the production target and is supported at the source level through a generation-conditional cloud activation pointer (`gs://bucket/object`) that Retrieval consumes. A `FakeGCSClient` double supports local verification. A real GCS bucket, credentials and upload smoke check remain external.
+The source supports local prepared files and a generation-conditional cloud activation pointer (`gs://bucket/object`) that Retrieval consumes. `FakeGCSClient` supports local source tests; those tests do not establish a live bucket or activation. The [deployment record](../private-deployment/STATUS.md#configuration-reference--2026-10-21) owns the recorded installation configuration.
 
 The backend image is shared by Coordination, Retrieval and admin, while their containers remain independent. Current mounts include `.runtime/data`/`NORA_RELEASES_ROOT`, `.runtime/models/bge`, `.runtime/state` for the Coordination request counter, and `.runtime/secrets` mounted where needed. `scripts/docker_acceptance.sh` provides a bounded, unique-project acceptance run that starts only the services needed for the four-job pipeline and cleans up its own resources.
 

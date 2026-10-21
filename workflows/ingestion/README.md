@@ -4,7 +4,7 @@
 
 Ingestion prepares selected documents for retrieval when an operator starts a run. **Example:** add a revised project decision while preserving its original bytes and the retained knowledge corpus. Questions and folder changes do not start ingestion jobs.
 
-Use the [operator checklist](knowledge-base-update-checklist.md) for the current local deployment. This guide explains artifacts, assembly and activation mechanisms; the [container guide](../../setup/containers/ingestion.md) owns images, entrypoints and mounts.
+Use the [operator checklist](knowledge-base-update-checklist.md) to select the installation's activation procedure. This guide explains artifacts, assembly and activation mechanisms; the [container guide](../../setup/containers/ingestion.md) owns images, entrypoints and mounts.
 
 ## Selected target workflow
 
@@ -15,7 +15,7 @@ Use the [operator checklist](knowledge-base-update-checklist.md) for the current
 | Stage | Input | Durable output |
 | --- | --- | --- |
 | Conversion | Read-only selected originals | `extracted/manifest.json`, extracted text/assets and source metadata |
-| Preparation | Completed extraction | Full documents, manifest, `coverage.json`, chunks with stable identities, hashes and offsets |
+| Preparation | Completed extraction | Full documents with content hashes, manifest, `coverage.json` and chunks with stable IDs, headings, text and categories |
 | Embedding | Completed prepared chunks | Vectors, pinned model/encoding metadata and `job-embed.json` |
 | Import and verification | Complete embedded bundle | Fresh Qdrant collection and `job-import.json` |
 
@@ -23,9 +23,9 @@ Each temporary worker consumes completed artifacts and exits. Artifacts survive 
 
 ## Processing contract
 
-Preserve original bytes, substantive text, headings and provenance. Docling extracts supported binary documents; supported text/JSON inputs use direct readers. Deterministic preparation accounts for unsupported, empty and unreadable inputs, omits exact duplicates and obvious metadata/boilerplate, and does not use LLM summaries or rewrite source meaning.
+Preserve original bytes, substantive text, headings and provenance. The conversion job accepts PDF, DOCX, HTML, PPTX, XLSX, Markdown and TXT. Markdown and TXT use direct readers; the other formats use Docling. Preparation can read JSON text directly, but JSON is not accepted by the four-job conversion entrypoint. Deterministic preparation accounts for unsupported, empty and unreadable inputs, omits exact duplicates and obvious metadata/boilerplate, and does not use LLM summaries or rewrite source meaning.
 
-Chunk within the embedding model's complete input limit. Keep chunk IDs, offsets, hashes and model configuration with the vectors. Embedding and interactive Retrieval use the same shared BGE service, with matching revision, dimensions and normalization and the appropriate document/query encoding modes. Bound batch load to preserve interactive capacity; see [shared BGE capacity](../../setup/containers/README.md#shared-bge-capacity).
+Chunk within the embedding model's complete input limit. The current bundle retains document content hashes, chunk IDs and model configuration with the vectors. Token offsets are used internally for splitting; persisted chunk offsets and individual chunk-content hashes are not part of the current output. Embedding and interactive Retrieval use the same shared BGE service, with matching revision, dimensions and normalization and the appropriate document/query encoding modes. Bound batch load to preserve interactive capacity; see [shared BGE capacity](../../setup/containers/README.md#shared-bge-capacity).
 
 A vector file alone is not an imported index. Import independently verifies point identity/counts and the matching document manifest. Each stage validates its input artifacts. Interrupted-run recovery and concurrent writers remain unverified.
 
@@ -57,11 +57,11 @@ Prepared documents and their matching search collection advance together. Import
 
 | Retrieval configuration | Activation |
 | --- | --- |
-| Literal local release-directory pin — current private deployment | Explicit deployment overlay; recreate only Retrieval |
+| Literal local release-directory pin | Explicit deployment overlay; recreate only Retrieval |
 | Local `current` symlink | Atomically replace the symlink after verification |
-| GCS pointer — pending private cutover | Publish the release, then conditionally update the pointer |
+| Generation-pinned GCS pointer | Publish the release, then conditionally update the pointer |
 
-The current private deployment does not follow `current`. Its [operator checklist](knowledge-base-update-checklist.md#4-activate-retrieval) requires the complete current Compose file set, including later Coordination repair overlays. Database backups do not change the activation mechanism.
+A literal-pin installation does not follow `current`. Its [activation procedure](knowledge-base-update-checklist.md#4-activate-retrieval) requires the complete installation Compose file set, including applicable Coordination repair overlays. Database backups do not change the activation mechanism.
 
 For pointer-following installations, Retrieval resolves the selection per request and honors `X-Nora-Release` so search and read within a turn use the same release. GCS/Qdrant writes are not transactional: advance the pointer only after import verification. A failure after a cloud pointer write may leave local history/symlink records stale and requires reconciliation. Record failed acceptance as incomplete and investigate the failed check.
 
@@ -81,7 +81,7 @@ These are alternative launchers, not two consecutive commands. Both run conversi
 
 ## GCS publication reference
 
-This is the selected production target, not the current private deployment path. Originals are retained in the installation's source bucket; prepared documents and the pointer belong in the dedicated prepared-data bucket. Bucket/IAM setup and live cutover are separate from ordinary content updates.
+This reference describes GCS-pointer activation. The dated deployment record owns the installation's selected mode. Originals are retained in the installation's source bucket; prepared documents and the pointer belong in the dedicated prepared-data bucket. Bucket/IAM setup and live cutover are separate from ordinary content updates.
 
 Before cutover, verify a keyless publisher can create releases and conditionally update the intended pointer, while Retrieval has read-only access. The pointer bucket must match `NORA_GCS_BUCKET`; the prefix must be nonempty. Configure Retrieval to follow the cloud pointer and save the effective deployment configuration with the backups.
 

@@ -4,9 +4,9 @@
 
 Update knowledge deliberately, outside conversations. **Example:** add one revised project decision while keeping the existing corpus, then verify an answer about that decision.
 
-## Current private deployment: local release pin
+## Select the activation procedure
 
-The latest saved deployment evidence uses a literal local Retrieval release-directory pin. GCS cutover remains pending. Read the latest deployment record and the installation's private operating guide for the actual release, collection, Compose files and backup locations; read them back on the host before a run.
+Use the dated [deployment record](../../setup/private-deployment/STATUS.md#configuration-reference--2026-10-21) and the installation's private operating guide to select local-pin or GCS-pointer activation. Verify the effective release, collection, Compose files and backups before a run. Steps below show the local-pin procedure; the [GCS reference](README.md#gcs-publication-reference) owns pointer activation.
 
 ![Five steps from backups through adding knowledge and checking answers.](../../architecture/diagrams/ingestion-workflow.gif)
 
@@ -73,9 +73,13 @@ up -d --no-deps --no-build --pull never --force-recreate --wait retrieval
 
 **Expected result:** the active release and representative answers pass, with the result recorded. If a check fails, leave the run marked incomplete and investigate the failed check. PostgreSQL conversation history is unchanged by ingestion.
 
-## Future routine path: after GCS cutover
+## Current routine path after GCS cutover
 
-GCS is a separate deployment task. Complete bucket/IAM and keyless publisher setup, configure Retrieval to follow the pointer, and verify live publication and pointer selection before using it routinely. The [GCS reference](README.md#gcs-publication-reference) owns commands and prerequisites; it is not the current private deployment procedure.
+The candidate private deployment now follows the generation-pinned GCS
+pointer. Future updates must publish the complete verified release first,
+conditionally advance the pointer, and then verify Retrieval's resolved
+manifest, collection, search and direct read. The [GCS reference](README.md#gcs-publication-reference)
+owns commands and prerequisites.
 
 ## Current limitations
 

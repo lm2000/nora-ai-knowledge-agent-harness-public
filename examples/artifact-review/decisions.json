@@ -1,0 +1,21 @@
+{
+  "packet_sha256": "5c83c563ec8604dfd6a4d7c95398d5e788cea17783e4a93b1fd0c3300e2afbee",
+  "response_sha256": "44fb6573832ea4cfe86b84100a7bb0f37e2b0e0ea20c9f5c5d89c6a476421b09",
+  "decisions": [
+    {
+      "finding_id": "F1",
+      "decision": "accept",
+      "reason": "The source explicitly requires both prerequisites."
+    },
+    {
+      "finding_id": "F2",
+      "decision": "reject",
+      "reason": "No release duration appears in the supplied source."
+    },
+    {
+      "finding_id": "F3",
+      "decision": "already_resolved",
+      "reason": "The current artifact already contains the open-questions line."
+    }
+  ]
+}

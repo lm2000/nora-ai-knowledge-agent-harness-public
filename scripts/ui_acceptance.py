@@ -306,6 +306,23 @@ def run_browser_tests(base: str, ports: Ports, token: str, verify_dir: Path, res
             assert not errors, errors
             result.ok("no-browser-errors")
             page.screenshot(path=str(verify_dir / "assistant.png"))
+            page.set_viewport_size({"width": 390, "height": 844})
+            assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+            expect(page.get_by_role("button", name="New conversation")).to_be_visible()
+            page.screenshot(path=str(verify_dir / "assistant-mobile.png"), full_page=True)
+            result.ok("mobile-layout")
+            page.route(
+                "**/api/status",
+                lambda route: route.fulfill(
+                    status=503, json={"ready": False, "label": "Nora is unavailable"}
+                ),
+            )
+            page.reload()
+            expect(page.get_by_role("status")).to_have_text("Nora is unavailable")
+            expect(page.locator(".notice")).to_be_visible()
+            assert thread() == first
+            page.screenshot(path=str(verify_dir / "assistant-unavailable.png"), full_page=True)
+            result.ok("unavailable-state-preserves-thread")
 
 
 def main() -> int:

@@ -18,12 +18,14 @@ Each topic has one current owner. Superseded material remains available through 
 | [setup/](setup/README.md) | Installation and configuration |
 | [setup/containers/](setup/containers/README.md) | Runtime service boundaries and state ownership |
 | [setup/private-deployment/](setup/private-deployment/STATUS.md) | Dated private deployment evidence |
-| [architecture/](architecture/Architecture%20Concept.md) | Current design, requirements and diagrams |
+| [architecture/](architecture/architecture-concept.md) | Current design, requirements and diagrams |
 | [agents/](agents/README.md) | Single-assistant behavior and evaluation expectations |
+| [Workflows](workflows/README.md) | Task-specific procedures, including artifact evaluation and revision |
 | [workflows/ingestion/](workflows/ingestion/README.md) | Knowledge update design and canonical checklist |
 | [data/](data/Data%20Contract.md) | Public source types and document identity rules |
 | [evaluation/](evaluation/README.md) | Quality protocols, results and known limits |
 | [scripts/](scripts/build_release.py) | Validation, smoke and source-release utilities |
+| `skills/` | Workspace-installed reference copies, identified by their source-origin records; excluded from public releases |
 | `operations/` | Private tracked runbooks and recovery evidence; excluded from public releases |
 | [Publishing](PUBLISHING.md) | Public source snapshot procedure |
 

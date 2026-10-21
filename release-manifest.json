@@ -21,7 +21,7 @@
         "Templates/LICENSE",
         "Templates/Project Template.md",
         "agents/README.md",
-        "architecture/Architecture Concept.md",
+        "architecture/architecture-concept.md",
         "architecture/Requirements.md",
         "architecture/Research and Design Inputs.md",
         "architecture/diagrams/01-system-architecture.gif",
@@ -177,6 +177,22 @@
         "src/nora/assistant.py",
         "tests/test_assistant.py",
         "tests/test_metadata.py",
-        "ui/app/api/history/[thread_id]/route.ts"
+        "ui/app/api/history/[thread_id]/route.ts",
+        "deploy/gateway_web.py",
+        "deploy/gateway_streaming.py",
+        "tests/test_gateway.py",
+        "workflows/README.md",
+        "workflows/artifact-review/README.md",
+        "architecture/diagrams/artifact-review-flow.html",
+        "architecture/diagrams/artifact-review-flow.gif",
+        "architecture/diagrams/harness-workflows.html",
+        "architecture/diagrams/harness-workflows.gif",
+        "tests/test_evaluation_review.py",
+        "examples/artifact-review/decisions.json",
+        "examples/artifact-review/packet-v2.json",
+        "examples/artifact-review/packet.json",
+        "examples/artifact-review/response-v2.json",
+        "examples/artifact-review/response.json",
+        "DESIGN.md"
     ]
 }

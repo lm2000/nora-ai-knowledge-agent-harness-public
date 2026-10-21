@@ -7,6 +7,7 @@ internals. The MCP sub-application is loaded before serving client requests.
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import quote
 
 
 def read_credential(variable: str, default: str) -> str:
@@ -16,8 +17,24 @@ def read_credential(variable: str, default: str) -> str:
     return value
 
 
+def configure_database_url() -> None:
+    """Give LiteLLM a persistent database without putting the password in env."""
+    if os.environ.get("DATABASE_URL"):
+        return
+    password = read_credential("NIS_POSTGRES_PASSWORD_FILE", "/run/secrets/postgres")
+    user = quote(os.environ.get("NIS_POSTGRES_USER", "nora"), safe="")
+    database = quote(os.environ.get("NIS_POSTGRES_DB", "nora"), safe="")
+    host = os.environ.get("NIS_POSTGRES_HOST", "postgres")
+    port = os.environ.get("NIS_POSTGRES_PORT", "5432")
+    os.environ["DATABASE_URL"] = (
+        f"postgresql://{user}:{quote(password, safe='')}@{host}:{port}/{database}"
+    )
+
+
 def create_app():
     import httpx
+    from gateway_streaming import install
+    from gateway_web import create_web_app
     from starlette.routing import Mount
 
     os.environ["LITELLM_MASTER_KEY"] = read_credential(
@@ -26,11 +43,26 @@ def create_app():
     os.environ["NIS_UPSTREAM_TOKEN"] = read_credential(
         "NIS_UPSTREAM_TOKEN_FILE", "/run/secrets/internal"
     )
+    os.environ["OLLAMA_API_KEY"] = read_credential("NORA_OLLAMA_TOKEN_FILE", "/run/secrets/ollama")
+    os.environ["NIS_RETRIEVAL_TOKEN"] = read_credential(
+        "NIS_RETRIEVAL_TOKEN_FILE", "/run/secrets/mcp"
+    )
+    configure_database_url()
     os.environ.setdefault("CONFIG_FILE_PATH", "/app/gateway.yaml")
+    # This launcher connects an already initialized database. Never synchronize
+    # LiteLLM's schema against the shared NIS database during a gateway restart.
+    os.environ["DISABLE_SCHEMA_UPDATE"] = "true"
+    install()
+
+    web, authenticated_web = create_web_app(
+        os.environ["LITELLM_MASTER_KEY"], os.environ["OLLAMA_API_KEY"]
+    )
 
     from litellm.proxy.proxy_server import app
 
     original_lifespan = app.router.lifespan_context
+    # LiteLLM includes a catch-all UI route. The private adapter must precede it.
+    app.routes.insert(0, Mount("/internal-web", app=authenticated_web))
 
     @asynccontextmanager
     async def lifespan(application):
@@ -56,7 +88,10 @@ def create_app():
                 raise RuntimeError("LiteLLM MCP application mount is unavailable")
             # Enter and exit the mounted application's public lifespan in this
             # same task, before the parent gateway shuts down.
-            async with mounted.router.lifespan_context(mounted):
+            async with (
+                web.router.lifespan_context(web),
+                mounted.router.lifespan_context(mounted),
+            ):
                 yield
 
     app.router.lifespan_context = lifespan

@@ -46,6 +46,23 @@ nora convert path/to/document.pdf .runtime/converted-document
 
 Docling extracts Markdown and structured JSON into a new directory. Supply its Markdown output to preparation. The conversion job container (`job-convert`) uses a dedicated image that installs the Docling extra. To verify that image against a synthetic non-Markdown document, run `scripts/verify_conversion_image.py` outside the sandbox.
 
+## Browser acceptance with synthetic services
+
+This optional check starts its own local UI and in-memory assistant with model
+and retrieval doubles. It exercises conversation continuity, new chats, history,
+mobile layout and an unavailable-service state without provider credentials or
+private data. From the repository root after installing development dependencies:
+
+```bash
+python -m pip install playwright==1.64.0
+python -m playwright install chromium
+python scripts/ui_acceptance.py
+```
+
+Expected result: ten browser checks pass and screenshots/results appear under
+ignored `.verification/`. The runner cleans up its own temporary services. Set
+`NIS_BROWSER_EXECUTABLE` when using an existing Chrome/Chromium executable.
+
 ## Run the application
 
 This procedure passed an isolated ARM Linux trial with the three fictional documents and Ollama Cloud. Use a fresh target; existing deployments retain their original versions and volumes. On Docker Desktop or Colima, keep the checkout and `.runtime` under a directory shared with the Linux VM. A host-only temporary directory may build successfully but fail when Compose mounts credentials or data.

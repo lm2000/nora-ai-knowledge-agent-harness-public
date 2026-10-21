@@ -1,8 +1,33 @@
 # Changelog
 
+## Documentation and diagram consistency — 2026-10-21
+
+- Separate source architecture, client routes and recorded deployment configuration.
+- Match JSON and chunk-metadata descriptions to the current processing outputs.
+- Align three workflow names, simplify diagram navigation and enlarge small labels.
+- Retain the existing visual style and remove the invented design concept.
+
 [Home](README.md) · [Roadmap](Plan.md)
 
 This page records project milestones. Detailed private operating history and execution receipts are maintained separately.
+
+## 2026-10-21 — Whole-project engineering review
+
+Reorganized the overview around the problem, project contribution, architecture,
+trade-offs and evidence. Restored the full roadmap, consolidated historical
+quality entries and documented visual conventions and workspace-only skill
+ownership. Updated diagram typography and export compatibility. Added a large
+review-to-revision regression and mobile/unavailable-state browser checks.
+
+## 2026-10-21 — Artifact evaluation and revision workflow
+
+Added a workflow guide, configuration example and two HTML/GIF diagrams covering
+judge feedback, owner decisions, artifact revisions and lessons for the next
+review brief. Offline CLI commands validate saved reviews and record decisions
+bound to the exact response; a synthetic two-version example exercises the cycle.
+Retrieval quality and generated-output quality remain separate. See the
+[workflow guide](workflows/artifact-review/README.md) and
+[local validation](evaluation/VALIDATION.md#artifact-review-workflow--checked-2026-10-21).
 
 ## 2026-10-06 — Single-assistant cleanup in progress
 

@@ -32,8 +32,8 @@ Use the deployment's effective image overrides rather than assuming source defau
 
 `scripts/knowledge-update` runs the four job containers, checks completed artifacts and stops on failure. `nora knowledge-update` is the host-only alternative. Both create a complete release from their input, so additions must use separate jobs and `nora assemble` to retain the base corpus. Assembly is a separate operator CLI step, not a fifth ingestion job service.
 
-Without `NORA_GCS_POINTER`, the Docker launcher selects the release through local `current`. With it, the launcher uses `admin` to publish and conditionally advance the cloud pointer. The current private deployment pins Retrieval to a literal local directory and therefore needs a separate deployment overlay/recreation; follow the [operator checklist](../../workflows/ingestion/knowledge-base-update-checklist.md#4-activate-retrieval).
+Without `NORA_GCS_POINTER`, the Docker launcher selects the release through local `current`. With it, the launcher uses `admin` to publish and conditionally advance the cloud pointer. A literal local-directory pin needs a separate deployment overlay/recreation; follow the [operator checklist](../../workflows/ingestion/knowledge-base-update-checklist.md#4-activate-retrieval).
 
-Set the installation's Compose project, complete file set, mounted paths and service configuration before running jobs. Preserve all current repair overlays during deployment operations. Questions and folder changes never trigger a batch. GCS cutover and its publisher/IAM setup remain separate deployment work.
+Set the installation's Compose project, complete file set, mounted paths and service configuration before running jobs. Preserve all current repair overlays during deployment operations. Questions and folder changes never trigger a batch. GCS activation requires the installation's publisher/IAM configuration; source examples do not change deployment state.
 
 `nora cache-model` manages the pinned embedding model cache. The split job entrypoints above define this workflow.

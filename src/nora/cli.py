@@ -122,14 +122,50 @@ def parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--hit5", type=float, default=0.5)
     evaluate.add_argument("--mrr5", type=float, default=0.5)
     evaluate.add_argument("--output", type=Path)
+    replay = commands.add_parser(
+        "review-replay", help="Validate one saved artifact review offline; never calls a model"
+    )
+    replay.add_argument("--packet", type=Path, required=True)
+    replay.add_argument("--response", type=Path, required=True)
+    replay.add_argument("--http-status", type=int, required=True)
+    replay.add_argument("--output", type=Path, required=True)
+    revision = commands.add_parser(
+        "review-revision", help="Record owner decisions and an explicitly supplied revised artifact"
+    )
+    revision.add_argument("--review", type=Path, required=True)
+    revision.add_argument("--decisions", type=Path, required=True)
+    revision.add_argument("--next-packet", type=Path, required=True)
+    revision.add_argument("--output", type=Path, required=True)
+    example = commands.add_parser(
+        "review-example", help="Replay a synthetic artifact review and revision cycle offline"
+    )
+    example.add_argument("--fixtures", type=Path, default=Path("examples/artifact-review"))
+    example.add_argument("--output", type=Path, required=True)
     return root
 
 
 def main(argv=None) -> int:
     args = parser().parse_args(argv)
     try:
-        settings = Settings.from_env()
-        if args.command == "init":
+        # An offline replay must not depend on live service configuration or secrets.
+        settings = None if args.command.startswith("review-") else Settings.from_env()
+        if args.command == "review-replay":
+            from nora.evaluation import replay_review
+
+            result = replay_review(
+                args.packet, args.response, args.output, http_status=args.http_status
+            )
+        elif args.command == "review-revision":
+            from nora.evaluation import record_review_revision
+
+            result = record_review_revision(
+                args.review, args.decisions, args.next_packet, args.output
+            )
+        elif args.command == "review-example":
+            from nora.evaluation import run_review_example
+
+            result = run_review_example(args.fixtures, args.output)
+        elif args.command == "init":
             from nora.bootstrap import initialize
 
             result = initialize(args.directory)

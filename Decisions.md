@@ -1,6 +1,6 @@
 # Architecture decisions
 
-[Home](README.md) · [Architecture](architecture/Architecture%20Concept.md) · [Roadmap](Plan.md)
+[Home](README.md) · [Architecture](architecture/architecture-concept.md) · [Roadmap](Plan.md)
 
 This page owns the current accepted design. For example, a client asks about the Atlas release and continues with the returned conversation UUID. Dated deployment evidence lives in [deployment status](setup/private-deployment/STATUS.md); superseded choices remain in Git history.
 
@@ -8,15 +8,25 @@ This page owns the current accepted design. For example, a client asks about the
 
 **Accepted 2026-10-02; cleanup expanded 2026-10-06.** One NIS assistant handles separate topic conversations. Research, knowledge questions and interview analysis are tasks for that assistant, not separately selectable runtimes. Remove obsolete role configuration, role-specific interfaces and context-transfer machinery.
 
-The default client path is `client → LiteLLM MCP Gateway → embedded FastMCP → NIS runtime`. Direct clients use the same FastMCP server. The tool contract remains `ask_nis(question, thread_id=None)`, returning a plain answer and its UUID. HTTP, AG-UI and MCP share the same operation and application lifecycle; the embedded adapter adds no loopback model request. LiteLLM supplies the gateway rather than replacing the incumbent model selector.
+The source gateway reference path is `client → LiteLLM MCP Gateway → embedded FastMCP → NIS runtime`. The dated deployment record owns the enabled installation path. Direct clients use the same FastMCP server. The tool contract remains `ask_nis(question, thread_id=None)`, returning a plain answer and its UUID. HTTP, AG-UI and MCP share the same operation and application lifecycle; the embedded adapter adds no loopback model request. LiteLLM supplies the gateway rather than replacing the incumbent model selector.
 
 NIS retains OSS Deep Agents/LangGraph, automatic model selection and PostgreSQL checkpoints. New topic chats use `assistant:<UUID>` internally and public UUIDs externally. Existing assistant chats continue; old role chats are neither migrated nor exposed through the assistant. Stored history is retained, with minimal ownership checks preventing old role UUIDs from being reused as assistant UUIDs. No destructive database migration is selected.
 
 This is a private single-user system. One Coordination process owns execution and conversation lifecycle; there is no additional custom outer coordinator. The gateway adds a process and network hop, so no measured cost or latency saving is claimed. History/status MCP tools, streaming MCP and other gateway integrations remain future work.
 
-## Current inference providers
+## Inference routing boundaries
 
-Ollama Cloud and Fireworks.ai supply answer inference; optional local Ollama remains supported. Hermes is excluded from harness application inference, execution and review. The selector meets the task's required quality before comparing configured cost/latency assumptions. These assumptions require measurement; selecting a route does not establish answer quality.
+The configured NIS RAG Cloud route supplies the answer-inference default. Explicit client alternatives are native OpenAI, Ollama Cloud, and Ollama Local. Fireworks is a legacy, credential-empty option; Hermes is excluded from harness application inference, execution and review. The selector meets the task's required quality before comparing configured cost/latency assumptions. These assumptions require measurement; selecting a route does not establish answer quality.
+
+The private LiteLLM gateway also supplies an explicit client inference alias and
+read-only Retrieval/public-web MCP namespaces. Public web lookup reuses the
+existing Ollama credential; it does not add a tool to the NIS conversation graph
+or alter that graph's request bounds. The pinned gateway compatibility adapter
+retains mixed reasoning/text channels and independent Ollama function-call IDs
+and indexes. Gateway restarts never synchronize a LiteLLM schema against the
+shared NIS database. The [routing guide](setup/model-routing.md) owns this client
+configuration, and [deployment status](setup/private-deployment/STATUS.md) owns
+fresh-session/default-selection evidence.
 
 Keep the accepted request bounds: three retrieval calls including initial Grounding, four logical model calls, bounded provider retries, and one no-tool word-length repair within that model allowance. Source text remains reference material rather than executable instructions.
 
@@ -39,3 +49,11 @@ UI, Coordination, LiteLLM gateway, Retrieval MCP, shared BGE, Qdrant and Postgre
 Maintain each diagram as editable HTML with inline SVG plus its derived GIF. Keep detailed explanations in interactive nodes and visible labels understandable without interaction. Publish only allowlisted source, synthetic examples and portable guidance; credentials, corpus data and private traces remain outside publication.
 
 Validate source and diagrams before rollout. Back up state before changing the running candidate and verify existing assistant continuity, new conversations and affected client behavior afterward. Keep source checks, live deployment and final conversational acceptance distinct. Representative quality measurement, full clean-target restoration and other host variants remain later work in the roadmap.
+
+## Artifact review as a separate workflow
+
+[Artifact evaluation and revision](workflows/artifact-review/README.md) is an
+owner-directed workflow alongside knowledge ingestion. Frozen artifacts and
+task-specific criteria feed reviews; owner decisions determine revisions and
+delivery. Retrieval relevance and artifact quality remain separate measures.
+This adds no background review loop or conversation/ingestion trigger.

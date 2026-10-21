@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "task": "Write a source-grounded Atlas release briefing.",
+  "criteria": [
+    "Factual support",
+    "Both release prerequisites",
+    "Useful to the release owner"
+  ],
+  "artifact_version": "atlas-v1",
+  "rubric_version": "atlas-briefing-1",
+  "persona": "Evidence reviewer",
+  "provider": "synthetic-fixture",
+  "model": "scripted-reviewer",
+  "artifact": {
+    "text": "Atlas release requires a passing payment-service load test.\nOpen questions: release duration is not documented.\n",
+    "sha256": "b3fbcfcae91791de0247df3e8350919c6c7e2aec31fa2b9d031791c697f89533",
+    "anchors": {
+      "prerequisites": "Atlas release requires a passing payment-service load test.",
+      "questions": "Open questions: release duration is not documented."
+    }
+  },
+  "sources": [
+    {
+      "doc_id": "f1dc7de37b3482392d1f0d98b85ee63b6e00c36f1d15b282cf060fbccc7202c3",
+      "heading": "Atlas release plan",
+      "text": "# Atlas release plan\n\nThis is a fictional test document, supplied under the repository's MIT license.\n\nThe Atlas team plans the release for October 12, 2026. The release owner is Jordan.\nThe remaining blocker is the payment-service load test. The release can proceed after\nthat test passes and the rollback rehearsal is complete.\n",
+      "sha256": "f1dc7de37b3482392d1f0d98b85ee63b6e00c36f1d15b282cf060fbccc7202c3"
+    }
+  ]
+}

@@ -18,11 +18,25 @@ Use explicit configuration and dependency injection at service boundaries. Modul
 
 ## Documentation and diagrams
 
+[Visual conventions](DESIGN.md) records the incumbent UI and diagram style.
+
 Explain purpose and give an example before technical reference. Put a procedure in one owning guide and link to it elsewhere. State the scope of a measured result, including the use of doubles or synthetic data.
 
 List public Markdown and diagram pairs in [public-docs.json](public-docs.json). Maintain one editable HTML file with inline SVG and its matching generated GIF under `architecture/diagrams/`. Embed the GIF with a standard Markdown image and place its HTML link directly below, labeled as a local browser version. Regenerate the GIF whenever its HTML changes and visually inspect it. Separate SVG, Excalidraw and Mermaid sources are not maintained. Run `make linkcheck` and `make diagrams`; structural checks and visual inspection establish different results.
 
 The [release manifest](release-manifest.json) lists every public source file explicitly. Add intended source files there. `make release-check` checks paths, document coverage and common private credential/path markers; `make release` builds a snapshot with per-file hashes. It never includes Git history or runtime data.
+
+## Reading and maintaining the project
+
+Write for a reader assessing the engineering work: explain the problem, show the
+system and trade-offs, then link to reproducible evidence. Keep installation
+commands in Setup and dated experiments in validation records. A historical
+failure is evidence to explain, not a current feature status to repeat everywhere.
+
+Installed skill copies belong to their canonical source repositories. Maintain
+explicit private-document exclusions for workspace copies; adding an exclusion
+does not add a file to the public source allowlist. New unlisted Markdown must
+still fail inventory checks. Do not edit or publish those copies as harness code.
 
 ## Pull requests
 

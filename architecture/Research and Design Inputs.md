@@ -1,6 +1,6 @@
 # References and attribution
 
-[Architecture](Architecture%20Concept.md) · [Decisions](../Decisions.md) · [Notices](../NOTICE.md)
+[Architecture](architecture-concept.md) · [Decisions](../Decisions.md) · [Notices](../NOTICE.md)
 
 These references explain the technologies and patterns behind Nora. A linked tutorial is not evidence that its features are installed, and Nora does not inherit a tutorial's provider or hosting choices.
 

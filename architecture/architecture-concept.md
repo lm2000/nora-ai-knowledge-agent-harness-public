@@ -10,7 +10,7 @@ Nora separates conversation handling from knowledge retrieval and document prepa
 
 ## Single-assistant architecture
 
-One NIS assistant handles separate topic chats. Browser AG-UI and the embedded FastMCP tool reach the same Coordination operation. LiteLLM supplies the shared MCP gateway; direct FastMCP remains available. Model selection, OSS Deep Agents/LangGraph and PostgreSQL checkpoints stay inside NIS. [Decisions](../Decisions.md) owns the accepted choices; [deployment status](../setup/private-deployment/STATUS.md) owns dated acceptance and open quality checks.
+One NIS assistant handles separate topic chats. Browser AG-UI and the embedded FastMCP tool reach the same Coordination operation. The source includes a separate LiteLLM gateway and a direct FastMCP entrance. The deployment record owns the enabled client path. Model selection, OSS Deep Agents/LangGraph and PostgreSQL checkpoints stay inside NIS. [Decisions](../Decisions.md) owns the accepted choices; [deployment status](../setup/private-deployment/STATUS.md) owns dated acceptance and open quality checks.
 
 ## Accepted target view
 
@@ -18,9 +18,20 @@ One NIS assistant handles separate topic chats. Browser AG-UI and the embedded F
 
 [Local browser version](diagrams/01-system-architecture.html) · [All diagrams](diagrams/README.md)
 
-UI, Coordination, gateway, Retrieval, shared BGE, Qdrant and PostgreSQL have separate service boundaries. Conversion, preparation, embedding and import are temporary operator-triggered jobs. Current prepared full text is local; dedicated GCS storage remains pending.
+UI, Coordination, gateway, Retrieval, shared BGE, Qdrant and PostgreSQL have separate service boundaries. Conversion, preparation, embedding and import are temporary operator-triggered jobs. Prepared text can use a local release or generation-pinned GCS objects; the deployment guide owns the selected installation.
 
 Knowledge updates do not run inside conversations. Additions are assembled with retained knowledge; rebuilds use the complete desired inputs. Back up state, import and verify the complete release, explicitly activate Retrieval, then check answers. The [operator checklist](../workflows/ingestion/knowledge-base-update-checklist.md) owns that procedure and the [technical guide](../workflows/ingestion/README.md) owns artifacts and activation contracts.
+
+## Artifact evaluation and revision
+
+[Artifact review](../workflows/artifact-review/README.md) is an owner-directed
+workflow alongside knowledge ingestion and conversational question answering.
+Frozen artifacts, sources and criteria feed judge reviews; owner decisions lead
+to a revised artifact or retention, while useful lessons inform the next brief.
+Harbor Hub is a task-execution option and Fireworks/Hugging Face are inference
+options. The local CLI validates saved responses and records explicit decisions.
+See the [workflow map](diagrams/README.md#harness-workflows) for its place in the
+harness. It does not run automatically inside a conversation or ingestion job.
 
 ## One request
 
@@ -53,8 +64,8 @@ Deep Agents is the harness, LangChain supplies model/tool abstractions, and Lang
 | Document conversion and preparation | Docling plus deterministic readers |
 | Embeddings and retrieval | BGE, Qdrant dense search and hashed lexical fusion |
 | Conversation persistence | PostgreSQL |
-| Answer inference | Ollama Cloud and Fireworks.ai; optional local Ollama |
-| Prepared documents | Local retained release; GCS cutover pending |
+| Answer inference | Configured application model adapters; see model routing |
+| Prepared documents | Local directory or generation-pinned GCS objects |
 
 Versions are pinned in the Python and UI lockfiles. The current stack is selected; alternatives and historical rationale remain in [Decisions](../Decisions.md), while external references are listed in [References](Research%20and%20Design%20Inputs.md).
 
@@ -62,7 +73,7 @@ Versions are pinned in the Python and UI lockfiles. The current stack is selecte
 
 Coordination contains the assistant and its Deep Agent together. UI, Retrieval MCP, BGE, Qdrant and PostgreSQL are separate services. Four ingestion jobs run only on an operator command and exchange durable artifacts outside conversations. There is no separate custom outer coordinator.
 
-The same source package supplies several independent containers. Host placement can change without changing these ownership boundaries. Qdrant holds the rebuildable search index, PostgreSQL holds conversation state and GCS holds prepared documents; database volumes are not object-storage mounts.
+The same source package supplies several independent containers. Host placement can change without changing these ownership boundaries. Qdrant holds the rebuildable search index, PostgreSQL holds conversation state and prepared documents use the configured local/GCS store; database volumes are not object-storage mounts.
 
 ## Storage roles
 
@@ -86,7 +97,7 @@ Read the dated [deployment status](../setup/private-deployment/STATUS.md) and [m
 
 ## Model routing
 
-The assistant selects among configured Ollama Cloud and Fireworks.ai models. The objective is to meet required answer quality first, then compare eligible routes by cost and latency. Exact settings and limits live in [Model routing](../setup/model-routing.md).
+Coordination selects among its configured application models. A client such as Codex separately selects its own inference route; that choice does not replace the application selector. Supported adapters and enabled deployment routes are different inventories. [Model routing](../setup/model-routing.md) owns the configuration reference; the dated [deployment record](../setup/private-deployment/STATUS.md) owns installation state.
 
 ## Additional MCP clients
 
