@@ -7,7 +7,8 @@
     "start": "COPILOTKIT_TELEMETRY_DISABLED=true next start",
     "dev": "COPILOTKIT_TELEMETRY_DISABLED=true next dev -p 3000",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "preinstall": "node -e \"if(!(process.env.npm_config_user_agent||'').startsWith('pnpm/')){console.error('Use pnpm for this project.');process.exit(1)}\""
   },
   "dependencies": {
     "next": "16.2.1",

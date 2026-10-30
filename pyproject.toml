@@ -9,7 +9,7 @@ description = "A self-hosted knowledge assistant with shared MCP retrieval"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
-license-files = ["LICENSE", "NOTICE.md", "architecture/diagrams/Excalifont-LICENSE.txt"]
+license-files = ["LICENSE", "NOTICE.md", "docs/architecture/diagrams/Excalifont-LICENSE.txt"]
 dependencies = ["numpy==2.5.2", "qdrant-client==1.19.0"]
 
 [project.optional-dependencies]

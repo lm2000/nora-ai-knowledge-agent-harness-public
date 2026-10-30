@@ -1,6 +1,6 @@
 # Upstream notices
 
-The project retains the following LangChain notice from its architecture/template reference material. The repository license is in [LICENSE](LICENSE); the reusable template notice is also retained in [Templates/LICENSE](Templates/LICENSE). Dependencies keep their own licenses.
+The project retains the following LangChain notice from its architecture/template reference material. The repository license is in [LICENSE](LICENSE); the reusable template notice is also retained in [Templates/LICENSE](docs/templates/LICENSE). Dependencies keep their own licenses.
 
 MIT License
 
@@ -26,4 +26,4 @@ SOFTWARE.
 
 ## Diagram font
 
-The retired README SVG previews embedded Excalifont, Copyright (c) 2024 by Excalidraw. Their attribution is retained; the current HTML/GIF views use system fonts. The font is distributed under the [SIL Open Font License 1.1](architecture/diagrams/Excalifont-LICENSE.txt), retained separately from Nora's MIT license. [Upstream font metadata and license](https://github.com/excalidraw/excalidraw/blob/master/packages/excalidraw/fonts/Excalifont/index.ts).
+The retired README SVG previews embedded Excalifont, Copyright (c) 2024 by Excalidraw. Their attribution is retained; the current HTML/GIF views use system fonts. The font is distributed under the [SIL Open Font License 1.1](docs/architecture/diagrams/Excalifont-LICENSE.txt), retained separately from Nora's MIT license. [Upstream font metadata and license](https://github.com/excalidraw/excalidraw/blob/master/packages/excalidraw/fonts/Excalifont/index.ts).

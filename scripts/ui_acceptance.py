@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run isolated single-assistant browser acceptance with synthetic model/retrieval.
 
-Run from the repository root: mise exec -- python scripts/ui_acceptance.py.
+Run from the repository root: conda run -n nora-ai python scripts/ui_acceptance.py.
 Requires Playwright and Chromium; NIS_BROWSER_EXECUTABLE may point to Chrome.
 No inference credentials, live services or private corpus are used.
 """

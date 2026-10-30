@@ -1,12 +1,12 @@
 # Security and data handling
 
-[Home](README.md) · [Deployment reference](setup/private-deployment/README.md) · [Publication preparation](PUBLISHING.md)
+[Home](README.md) · [Deployment reference](docs/setup/private-deployment/README.md) · [Publication preparation](docs/PUBLISHING.md)
 
 Nora's current reference deployment serves one operator through private access. The repository does not establish a hardened public API or a multi-tenant authorization model.
 
-![The service boundaries discussed below.](architecture/diagrams/01-system-architecture.gif)
+![The service boundaries discussed below.](docs/architecture/diagrams/01-system-architecture.gif)
 
-[Local browser version](architecture/diagrams/01-system-architecture.html)
+[Local browser version](docs/architecture/diagrams/01-system-architecture.html)
 
 ## Trust boundaries
 
@@ -16,7 +16,13 @@ Nora's current reference deployment serves one operator through private access. 
 - Conversation checkpoints and prepared knowledge have separate storage and retention needs.
 - Hosted inference sends selected question/history/context content to that provider. Self-hosted document storage alone does not imply that all processing stays on the host.
 
-The shared Compose file mounts credentials per service and exposes only UI and Retrieval on loopback. This is a personal-workspace design; verify private access and egress on the actual target. Complete container startup and multi-user authorization are outside the current validation result.
+The shared Compose file mounts credentials per service. It publishes UI 8080
+and Gateway 4000 on loopback when those services run; Retrieval, BGE,
+Coordination and both databases remain internal. The
+[service reference](docs/setup/containers/README.md#current-implementation) owns
+these source defaults; overlays or proxies can change exposure. This is a
+personal-workspace design, so verify private access and egress on the actual
+target. Dated startup checks do not establish multi-user authorization.
 
 ## Operational checks
 

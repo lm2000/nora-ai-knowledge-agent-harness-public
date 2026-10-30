@@ -5,56 +5,56 @@
     "AGENTS.md",
     "CHANGELOG.md",
     "CONTRIBUTING.md",
-    "Decisions.md",
+    "docs/Decisions.md",
     "NOTICE.md",
-    "PUBLISHING.md",
-    "Plan.md",
+    "docs/PUBLISHING.md",
+    "docs/Plan.md",
     "README.md",
-    "REPO_MAP.md",
+    "docs/README.md",
     "SECURITY.md",
-    "Templates/Project Template.md",
-    "agents/README.md",
-    "architecture/architecture-concept.md",
-    "architecture/Requirements.md",
-    "architecture/Research and Design Inputs.md",
-    "architecture/diagrams/README.md",
-    "data/Data Contract.md",
-    "evaluation/Multi-turn Evaluation.md",
-    "evaluation/README.md",
-    "evaluation/VALIDATION.md",
-    "evaluation/embeddings/PROTOCOL.md",
-    "evaluation/embeddings/README.md",
-    "evaluation/embeddings/RESULTS.md",
-    "evaluation/embeddings/VALIDATION.md",
-    "evaluation/regression/README.md",
-    "evaluation/targeted-research-pilot/README.md",
-    "evaluation/targeted-research-pilot/improvement/README.md",
+    "docs/templates/Project Template.md",
+    "docs/agents/README.md",
+    "docs/architecture/architecture-concept.md",
+    "docs/architecture/Requirements.md",
+    "docs/architecture/Research and Design Inputs.md",
+    "docs/architecture/diagrams/README.md",
+    "docs/data/Data Contract.md",
+    "docs/evaluation/Multi-turn Evaluation.md",
+    "docs/evaluation/README.md",
+    "docs/evaluation/VALIDATION.md",
+    "docs/evaluation/embeddings/PROTOCOL.md",
+    "docs/evaluation/embeddings/README.md",
+    "docs/evaluation/embeddings/RESULTS.md",
+    "docs/evaluation/embeddings/VALIDATION.md",
+    "docs/evaluation/regression/README.md",
+    "docs/evaluation/targeted-research-pilot/README.md",
+    "docs/evaluation/targeted-research-pilot/improvement/README.md",
     "examples/documents/atlas-decisions.md",
     "examples/documents/atlas-plan.md",
     "examples/documents/cedar-support.md",
-    "setup/README.md",
-    "setup/beelink/README.md",
-    "setup/model-routing.md",
-    "setup/configuration.md",
-    "setup/containers/README.md",
-    "setup/containers/coordination.md",
-    "setup/containers/ingestion.md",
-    "setup/containers/knowledge-retrieval.md",
-    "setup/containers/postgresql.md",
-    "setup/containers/qdrant.md",
-    "setup/containers/ui.md",
-    "setup/google-cloud/CLI.md",
-    "setup/google-cloud/QDRANT.md",
-    "setup/google-cloud/README.md",
-    "setup/google-cloud/VALIDATION.md",
-    "setup/private-deployment/README.md",
-    "setup/private-deployment/ROLLOUT.md",
-    "setup/private-deployment/STATUS.md",
-    "workflows/ingestion/README.md",
-    "workflows/ingestion/knowledge-base-update-checklist.md",
-    "workflows/README.md",
-    "workflows/artifact-review/README.md",
-    "DESIGN.md"
+    "docs/setup/README.md",
+    "docs/setup/beelink/README.md",
+    "docs/setup/model-routing.md",
+    "docs/setup/configuration.md",
+    "docs/setup/containers/README.md",
+    "docs/setup/containers/coordination.md",
+    "docs/setup/containers/ingestion.md",
+    "docs/setup/containers/knowledge-retrieval.md",
+    "docs/setup/containers/postgresql.md",
+    "docs/setup/containers/qdrant.md",
+    "docs/setup/containers/ui.md",
+    "docs/setup/google-cloud/CLI.md",
+    "docs/setup/google-cloud/QDRANT.md",
+    "docs/setup/google-cloud/README.md",
+    "docs/setup/google-cloud/VALIDATION.md",
+    "docs/setup/private-deployment/README.md",
+    "docs/setup/private-deployment/ROLLOUT.md",
+    "docs/setup/private-deployment/STATUS.md",
+    "docs/workflows/ingestion/README.md",
+    "docs/workflows/ingestion/knowledge-base-update-checklist.md",
+    "docs/workflows/README.md",
+    "docs/workflows/artifact-review/README.md",
+    "docs/DESIGN.md"
   ],
   "excluded_documents": [
     "operations/README.md",
@@ -63,94 +63,106 @@
   ],
   "supporting_files": [
     "LICENSE",
-    "Templates/LICENSE",
-    "architecture/diagrams/Excalifont-LICENSE.txt",
-    "architecture/diagrams/01-system-architecture.html",
-    "architecture/diagrams/01-system-architecture.gif",
-    "architecture/diagrams/system-at-a-glance.html",
-    "architecture/diagrams/system-at-a-glance.gif",
-    "architecture/diagrams/02-question-to-answer.html",
-    "architecture/diagrams/02-question-to-answer.gif",
-    "architecture/diagrams/conversation.html",
-    "architecture/diagrams/conversation.gif",
-    "architecture/diagrams/manual-ingestion.html",
-    "architecture/diagrams/manual-ingestion.gif",
-    "architecture/diagrams/architecture-request-path.html",
-    "architecture/diagrams/architecture-request-path.gif",
-    "architecture/diagrams/container-service-inventory.html",
-    "architecture/diagrams/container-service-inventory.gif",
-    "architecture/diagrams/private-rollout.html",
-    "architecture/diagrams/private-rollout.gif",
-    "architecture/diagrams/ingestion-workflow.html",
-    "architecture/diagrams/ingestion-workflow.gif",
-    "architecture/diagrams/artifact-review-flow.html",
-    "architecture/diagrams/artifact-review-flow.gif",
-    "architecture/diagrams/harness-workflows.html",
-    "architecture/diagrams/harness-workflows.gif",
-    "architecture/diagrams/embedding-cpu-comparison.html",
-    "architecture/diagrams/embedding-cpu-comparison.gif",
-    "architecture/diagrams/public-source-release.html",
-    "architecture/diagrams/public-source-release.gif",
-    "architecture/diagrams/embedding-comparison-method.html",
-    "architecture/diagrams/embedding-comparison-method.gif"
+    "docs/templates/LICENSE",
+    "docs/architecture/diagrams/Excalifont-LICENSE.txt",
+    "docs/architecture/diagrams/01-system-architecture.html",
+    "docs/architecture/diagrams/01-system-architecture.gif",
+    "docs/architecture/diagrams/system-at-a-glance.html",
+    "docs/architecture/diagrams/system-at-a-glance.gif",
+    "docs/architecture/diagrams/02-question-to-answer.html",
+    "docs/architecture/diagrams/02-question-to-answer.gif",
+    "docs/architecture/diagrams/conversation.html",
+    "docs/architecture/diagrams/conversation.gif",
+    "docs/architecture/diagrams/manual-ingestion.html",
+    "docs/architecture/diagrams/manual-ingestion.gif",
+    "docs/architecture/diagrams/architecture-request-path.html",
+    "docs/architecture/diagrams/architecture-request-path.gif",
+    "docs/architecture/diagrams/container-service-inventory.html",
+    "docs/architecture/diagrams/container-service-inventory.gif",
+    "docs/architecture/diagrams/private-rollout.html",
+    "docs/architecture/diagrams/private-rollout.gif",
+    "docs/architecture/diagrams/ingestion-workflow.html",
+    "docs/architecture/diagrams/ingestion-workflow.gif",
+    "docs/architecture/diagrams/artifact-review-flow.html",
+    "docs/architecture/diagrams/artifact-review-flow.gif",
+    "docs/architecture/diagrams/harness-workflows.html",
+    "docs/architecture/diagrams/harness-workflows.gif",
+    "docs/architecture/diagrams/embedding-cpu-comparison.html",
+    "docs/architecture/diagrams/embedding-cpu-comparison.gif",
+    "docs/architecture/diagrams/public-source-release.html",
+    "docs/architecture/diagrams/public-source-release.gif",
+    "docs/architecture/diagrams/embedding-comparison-method.html",
+    "docs/architecture/diagrams/embedding-comparison-method.gif",
+    "docs/architecture/diagrams/model-routing.html",
+    "docs/architecture/diagrams/model-routing.gif",
+    "docs/architecture/diagrams/judge-registry.html",
+    "docs/architecture/diagrams/judge-registry.gif"
   ],
   "mermaid_blocks": {},
   "diagram_pairs": [
     {
-      "source": "architecture/diagrams/system-at-a-glance.html",
-      "preview": "architecture/diagrams/system-at-a-glance.gif"
+      "source": "docs/architecture/diagrams/system-at-a-glance.html",
+      "preview": "docs/architecture/diagrams/system-at-a-glance.gif"
     },
     {
-      "source": "architecture/diagrams/01-system-architecture.html",
-      "preview": "architecture/diagrams/01-system-architecture.gif"
+      "source": "docs/architecture/diagrams/01-system-architecture.html",
+      "preview": "docs/architecture/diagrams/01-system-architecture.gif"
     },
     {
-      "source": "architecture/diagrams/02-question-to-answer.html",
-      "preview": "architecture/diagrams/02-question-to-answer.gif"
+      "source": "docs/architecture/diagrams/02-question-to-answer.html",
+      "preview": "docs/architecture/diagrams/02-question-to-answer.gif"
     },
     {
-      "source": "architecture/diagrams/conversation.html",
-      "preview": "architecture/diagrams/conversation.gif"
+      "source": "docs/architecture/diagrams/conversation.html",
+      "preview": "docs/architecture/diagrams/conversation.gif"
     },
     {
-      "source": "architecture/diagrams/manual-ingestion.html",
-      "preview": "architecture/diagrams/manual-ingestion.gif"
+      "source": "docs/architecture/diagrams/manual-ingestion.html",
+      "preview": "docs/architecture/diagrams/manual-ingestion.gif"
     },
     {
-      "source": "architecture/diagrams/architecture-request-path.html",
-      "preview": "architecture/diagrams/architecture-request-path.gif"
+      "source": "docs/architecture/diagrams/architecture-request-path.html",
+      "preview": "docs/architecture/diagrams/architecture-request-path.gif"
     },
     {
-      "source": "architecture/diagrams/container-service-inventory.html",
-      "preview": "architecture/diagrams/container-service-inventory.gif"
+      "source": "docs/architecture/diagrams/container-service-inventory.html",
+      "preview": "docs/architecture/diagrams/container-service-inventory.gif"
     },
     {
-      "source": "architecture/diagrams/private-rollout.html",
-      "preview": "architecture/diagrams/private-rollout.gif"
+      "source": "docs/architecture/diagrams/private-rollout.html",
+      "preview": "docs/architecture/diagrams/private-rollout.gif"
     },
     {
-      "source": "architecture/diagrams/ingestion-workflow.html",
-      "preview": "architecture/diagrams/ingestion-workflow.gif"
+      "source": "docs/architecture/diagrams/ingestion-workflow.html",
+      "preview": "docs/architecture/diagrams/ingestion-workflow.gif"
     },
     {
-      "source": "architecture/diagrams/artifact-review-flow.html",
-      "preview": "architecture/diagrams/artifact-review-flow.gif"
+      "source": "docs/architecture/diagrams/artifact-review-flow.html",
+      "preview": "docs/architecture/diagrams/artifact-review-flow.gif"
     },
     {
-      "source": "architecture/diagrams/harness-workflows.html",
-      "preview": "architecture/diagrams/harness-workflows.gif"
+      "source": "docs/architecture/diagrams/harness-workflows.html",
+      "preview": "docs/architecture/diagrams/harness-workflows.gif"
     },
     {
-      "source": "architecture/diagrams/embedding-cpu-comparison.html",
-      "preview": "architecture/diagrams/embedding-cpu-comparison.gif"
+      "source": "docs/architecture/diagrams/embedding-cpu-comparison.html",
+      "preview": "docs/architecture/diagrams/embedding-cpu-comparison.gif"
     },
     {
-      "source": "architecture/diagrams/public-source-release.html",
-      "preview": "architecture/diagrams/public-source-release.gif"
+      "source": "docs/architecture/diagrams/public-source-release.html",
+      "preview": "docs/architecture/diagrams/public-source-release.gif"
     },
     {
-      "source": "architecture/diagrams/embedding-comparison-method.html",
-      "preview": "architecture/diagrams/embedding-comparison-method.gif"
+      "source": "docs/architecture/diagrams/embedding-comparison-method.html",
+      "preview": "docs/architecture/diagrams/embedding-comparison-method.gif"
+    },
+    {
+      "source": "docs/architecture/diagrams/model-routing.html",
+      "preview": "docs/architecture/diagrams/model-routing.gif"
+    },
+    {
+      "source": "docs/architecture/diagrams/judge-registry.html",
+      "preview": "docs/architecture/diagrams/judge-registry.gif"
     }
   ]
 }

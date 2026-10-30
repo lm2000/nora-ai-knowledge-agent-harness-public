@@ -4,7 +4,8 @@ ENV NEXT_TELEMETRY_DISABLED=1 COPILOTKIT_TELEMETRY_DISABLED=true DO_NOT_TRACK=1
 COPY ui/package.json ./
 COPY ui/pnpm-lock.yaml ./
 COPY ui/pnpm-workspace.yaml ./
-RUN npm install --global pnpm@12.8.1 \
+COPY --from=ghcr.io/pnpm/pnpm:12.8.1@sha256:44cfd11d75b901dc7a83a16812d9134e4bf9d82f6b0eb28af6d666ebbf0fb4fb /opt/pnpm /opt/pnpm
+RUN ln -s /opt/pnpm/pnpm /usr/local/bin/pnpm \
     && pnpm install --frozen-lockfile
 COPY ui/ ./
 RUN pnpm run build

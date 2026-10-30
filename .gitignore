@@ -95,3 +95,16 @@ setup/google-cloud/plan-output/*.txt
 **/*.tsbuildinfo
 .verification/
 .pnpm-store/
+
+# Private evaluation artifacts under the consolidated documentation tree
+docs/evaluation/**/qdrant-data/
+docs/evaluation/**/*vectors*.npz
+docs/evaluation/**/*vectors*.npy
+docs/evaluation/**/*chunks*.jsonl
+docs/evaluation/targeted-research-pilot/input.zip
+docs/evaluation/targeted-research-pilot/documents.json
+docs/evaluation/targeted-research-pilot/retrieval.json
+docs/evaluation/targeted-research-pilot/query-response.json
+docs/evaluation/targeted-research-pilot/improvement/variants.json
+docs/evaluation/**/provider-response.json
+docs/evaluation/**/code-response.txt

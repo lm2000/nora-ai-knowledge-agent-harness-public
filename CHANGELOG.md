@@ -7,7 +7,7 @@
 - Align three workflow names, simplify diagram navigation and enlarge small labels.
 - Retain the existing visual style and remove the invented design concept.
 
-[Home](README.md) · [Roadmap](Plan.md)
+[Home](README.md) · [Roadmap](docs/Plan.md)
 
 This page records project milestones. Detailed private operating history and execution receipts are maintained separately.
 
@@ -26,16 +26,16 @@ judge feedback, owner decisions, artifact revisions and lessons for the next
 review brief. Offline CLI commands validate saved reviews and record decisions
 bound to the exact response; a synthetic two-version example exercises the cycle.
 Retrieval quality and generated-output quality remain separate. See the
-[workflow guide](workflows/artifact-review/README.md) and
-[local validation](evaluation/VALIDATION.md#artifact-review-workflow--checked-2026-10-21).
+[workflow guide](docs/workflows/artifact-review/README.md) and
+[local validation](docs/evaluation/VALIDATION.md#artifact-review-workflow--checked-2026-10-21).
 
 ## 2026-10-06 — Single-assistant cleanup in progress
 
-Current source guidance is being aligned around one assistant, separate topic chats and backup-first ingestion. Obsolete role interfaces and material are removed without migrating or deleting stored conversations. [The roadmap](Plan.md) owns integration and rollout progress; October 6 bounded client/browser/restart acceptance and the preparation answer passed after verified backups and Coordination/UI deployment.
+Current source guidance is being aligned around one assistant, separate topic chats and backup-first ingestion. Obsolete role interfaces and material are removed without migrating or deleting stored conversations. [The roadmap](docs/Plan.md) owns integration and rollout progress; October 6 bounded client/browser/restart acceptance and the preparation answer passed after verified backups and Coordination/UI deployment.
 
 ## 2026-10-03 — Conversational client slice accepted
 
-Bounded Codex and ordinary OpenClaw gateway question/follow-up checks passed. Direct/gateway transport and normal-restart continuity also have dated evidence. These results establish the exercised client paths rather than representative answer quality. [Deployment status](setup/private-deployment/STATUS.md) retains the acceptance limits.
+Bounded Codex and ordinary OpenClaw gateway question/follow-up checks passed. Direct/gateway transport and normal-restart continuity also have dated evidence. These results establish the exercised client paths rather than representative answer quality. [Deployment status](docs/setup/private-deployment/STATUS.md) retains the acceptance limits.
 
 ## 2026-10-02 — One-assistant architecture accepted
 

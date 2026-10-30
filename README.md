@@ -1,105 +1,105 @@
-# Nora Intelligence System — Knowledge & Agent Harness
+# Nora Intelligence System — AI Agent Harness
 
-A personal knowledge assistant for answering from changing documents while
-keeping conversation history, source identity and control over updates.
+Nora Intelligence System (NIS) helps a person turn knowledge into answers and
+reviewed work. Its AI Coordinator plans a task, delegates focused work, chooses
+model routes and brings the results together. This independent engineering
+project connects agent execution, retrieval, persistent conversations, knowledge
+updates and human approval.
 
-Michael Lvov built the application layer that connects retrieval, persistent
-conversations, controlled knowledge updates and traceable artifact reviews.
-This independent project includes code, architecture decisions, synthetic
-examples and bounded evaluation results.
+**Example:** “Prepare an Atlas release briefing.” NIS retrieves the release plan,
+checks the decisions and drafts a briefing. Role-based judges review the draft;
+the coordinator revises it before the owner decides whether to accept it.
 
-## The system
+Knowledge needs to outlive a chat and grow beyond what fits in a model request.
+The **Knowledge Backbone** retains prepared sources and a searchable index;
+Retrieval MCP brings relevant passages into a bounded context. The AI Coordinator
+organizes the work that uses that knowledge, from an answer to a reviewed artifact.
 
-**Example:** “What still blocks the Atlas release?” The assistant retrieves the
-fictional release plan and decisions, identifies the load test and rollback
-rehearsal, and can continue the same conversation.
+## The architecture
 
-![Clients reach the NIS assistant, which uses retrieval, model providers and PostgreSQL; manual ingestion updates its knowledge separately.](architecture/diagrams/system-at-a-glance.gif)
+The overview describes the accepted design. [Setup](docs/setup/README.md),
+[validation](docs/evaluation/VALIDATION.md) and the dated
+[deployment record](docs/setup/private-deployment/STATUS.md) own executable commands
+and observed results; [the roadmap](docs/Plan.md) tracks the implementation sequence.
 
-[Local browser version](architecture/diagrams/system-at-a-glance.html) · [Detailed architecture](architecture/diagrams/README.md#system-architecture) · [Architecture and trade-offs](architecture/architecture-concept.md)
+![NIS connects browser and MCP clients to one AI Coordinator, with model routes, retrieval, evaluation and persistent state.](docs/architecture/diagrams/system-at-a-glance.gif)
 
-One assistant serves separate topic conversations. A Next.js/CopilotKit UI and
-MCP clients reach the same Coordination operation, directly or through a separate
-LiteLLM gateway. Retrieval combines shared BGE embeddings, Qdrant and prepared
-source text. PostgreSQL stores LangGraph conversation checkpoints. The diagram
-shows source responsibilities; the [dated deployment record](setup/private-deployment/STATUS.md)
-owns the selected route.
+[Local browser version](docs/architecture/diagrams/system-at-a-glance.html) · [Architecture](docs/architecture/architecture-concept.md) · [Detailed diagrams](docs/architecture/diagrams/README.md)
 
-## Project implementation and upstream foundations
+The **Coordination Layer** groups the AI Coordinator and its interfaces. Deep
+Agents and LangGraph support planning, specialist subagents and conversation
+state. The CopilotKit browser UI reaches the coordinator through HTTP/AG-UI.
+MCP clients use an **MCP Gateway (LiteLLM Proxy)** and the embedded **MCP Server
+(FastMCP, `ask_nis`)**. The gateway provides MCP tool access; the coordinator owns
+the task.
 
-| Project work | Foundation it uses |
-| --- | --- |
-| Conversation ownership, context limits, answer checks and MCP entrance | Deep Agents, LangChain, LangGraph and FastMCP |
-| Source preparation, document identity, hybrid ranking and bounded search/read | BGE, Qdrant and MCP |
-| Provider adapters, capability selection and bounded fallback | LangChain model interfaces and configured inference providers |
-| Browser integration, origin checks and server-side credential handling | Next.js, CopilotKit and AG-UI |
-| Separate ingestion jobs, release verification and explicit activation | Python, Docker Compose and operator-selected storage |
-| Saved-review validation, exact-response owner decisions and revision records | A small offline evaluation workflow |
-
-The project supplies the application boundaries and integration code; upstream
-frameworks supply agent execution, persistence primitives, protocols and models.
-[Repository map](REPO_MAP.md) identifies the implementation owners.
+Retrieval MCP combines shared BGE embeddings, Qdrant and prepared full text.
+PostgreSQL stores conversation checkpoints. Model selection is a separate
+decision from delegating work: simple, general, reasoning and specialized routes
+can use suitable model backends such as Ollama and Fireworks.
 
 ## Three workflows
 
 | Workflow | Example | Result |
 | --- | --- | --- |
-| [Question answering](agents/README.md) | Ask about Atlas and continue the conversation | A supported answer and retained conversation |
-| [Knowledge ingestion](workflows/ingestion/README.md) | Add a revised guide with the retained corpus | A verified knowledge release |
-| [Artifact evaluation and revision](workflows/artifact-review/README.md) | Review a draft briefing against its source plan | Feedback, owner decisions and a retained or revised version |
+| [Question answering](docs/agents/README.md) | Ask what still blocks the Atlas release, then follow up | A grounded answer and a continuing conversation |
+| [Ingestion](docs/workflows/ingestion/README.md) | Add a revised guide alongside retained knowledge | A verified, explicitly activated knowledge release |
+| [Artifact evaluation and revision](docs/workflows/artifact-review/README.md) | Review and improve the Atlas briefing | Feedback, revisions and a human acceptance decision |
 
-Artifact review uses small iterations: draft → review → decision → revision.
-Accepted changes improve the material; retained lessons improve the next review
-brief. Its guide explains judges, datasets, Harbor Hub and inference-provider
-roles. The local commands replay saved responses rather than call those services.
+Evaluation uses separate coordinator routes to Harbor Hub and Hugging Face.
+Research into the role, domain and sources shapes versioned judge definitions.
+Prepared Harbor tasks and datasets form the **NIS Judge Registry**. Judges give
+feedback; a Synthetic Owner scores progress and recommends acceptance or
+revision. Reaching the threshold sends the artifact to the Real Owner, who can
+approve it or request another change. Lessons improve the next brief and judge
+definitions.
 
-## Engineering decisions
+## Project engineering
 
-| Choice | Reason and trade-off |
+Michael Lvov built the application boundaries and integration code. Upstream
+frameworks provide execution, persistence, protocols and models.
+
+| Project work | Foundation |
 | --- | --- |
-| One assistant with topic checkpoints | Clients share a runtime and lifecycle; this is a private single-user system |
-| Shared BGE for ingestion and retrieval | One representation boundary; batch and interactive encoding need admission control |
-| Manual ingestion outside conversations | Updates are inspectable and separately activated; source freshness needs an operator procedure |
-| Bounded tools, model calls and output repair | Failures remain explicit; strict limits can reject incomplete answers |
-| Owner-directed artifact review | Feedback is traceable to a version; model opinions still require human judgment |
+| Conversation ownership, context limits, bounded answers and shared client interfaces | Deep Agents, LangChain, LangGraph and FastMCP |
+| Source preparation, document identity, hybrid ranking and bounded search/read | BGE, Qdrant and MCP |
+| Provider adapters, capability selection and bounded fallback | LangChain model interfaces and inference backends |
+| Browser integration, origin checks and server-side credential handling | Next.js, CopilotKit and AG-UI |
+| Separate ingestion jobs, release verification and explicit activation | Python, Docker Compose and configured storage |
+| Saved-review validation, exact-response decisions and revision records | The local artifact-review CLI |
 
-See [Decisions](Decisions.md) for the accepted choices and
-[Requirements](architecture/Requirements.md) for their behavior contracts.
+[Decisions](docs/Decisions.md) explains the trade-offs.
+[Requirements](docs/architecture/Requirements.md) states the behavior contracts, and
+the [repository map](docs/README.md) points to their implementation owners.
 
-## Evidence
+## Try the review example
 
-| Evidence | What it establishes |
-| --- | --- |
-| [Source validation](evaluation/VALIDATION.md) | Synthetic application contracts, framework integration, CLI and UI checks |
-| [CPU embedding comparison](evaluation/embeddings/RESULTS.md) | BGE throughput of 12.87 vs 2.73 excerpts/s for Qwen on 17 excerpts; a small historical CPU experiment |
-| [Retrieval experiments](evaluation/README.md) | Small-set ranking results and misses, with corpus and method boundaries preserved |
-| [Private deployment record](setup/private-deployment/STATUS.md) | Dated client and service checks, separate from source tests |
-
-Retrieval relevance, generated-answer quality and execution correctness are
-separate questions. These results do not establish representative answer
-accuracy, enterprise scale or general provider superiority.
-
-## Try the artifact-review example
-
-After [installing the source](setup/README.md#install-for-development), run from
+After [installing the source](docs/setup/README.md#install-for-development), run from
 the repository root with a new output directory:
 
 ```bash
 nora review-example --output .private/atlas-review-cycle
 ```
 
-This is a separate example from the question-answering example above. Expected
-result: two synthetic reviews, explicit decisions and the corrected Atlas
-briefing. It adds a missing prerequisite, rejects invented timing and avoids
-duplicating an existing section. No model request is made.
+Expected result: two synthetic saved reviews, explicit decisions and a corrected
+Atlas briefing. The example adds a missing prerequisite, rejects invented timing
+and avoids duplicating an existing section. It makes no model or evaluation
+service request.
 
-For the application, real-embedding smoke test and configuration, follow
-[Setup](setup/README.md). [Contributing](CONTRIBUTING.md) owns development checks.
+## Evidence and further reading
 
-## Explore further
+| Evidence | What it establishes |
+| --- | --- |
+| [Source validation](docs/evaluation/VALIDATION.md) | Synthetic application contracts, framework integration, CLI and UI checks |
+| [CPU embedding comparison](docs/evaluation/embeddings/RESULTS.md) | BGE throughput of 12.87 vs 2.73 excerpts/s for Qwen on 17 excerpts; a small historical CPU experiment |
+| [Retrieval experiments](docs/evaluation/README.md) | Small-set ranking results and misses, with corpus and method boundaries preserved |
+| [Private deployment record](docs/setup/private-deployment/STATUS.md) | Dated client and service checks |
 
-- [Architecture](architecture/architecture-concept.md) and [diagrams](architecture/diagrams/README.md)
-- [Workflows](workflows/README.md) and [evaluation](evaluation/README.md)
-- [Roadmap](Plan.md), [repository map](REPO_MAP.md) and [configuration](setup/configuration.md)
+These bounded results do not establish representative answer accuracy,
+enterprise scale or general provider superiority. Retrieval relevance, answer
+quality and execution correctness need separate evidence.
 
-MIT licensed. Preserve [upstream notices](NOTICE.md) and [Templates/LICENSE](Templates/LICENSE).
+Use the [documentation index](docs/README.md) for the review route and the owning
+workflow, setup and evaluation guides.
+
+MIT licensed. Preserve [upstream notices](NOTICE.md) and the [template license](docs/templates/LICENSE).
