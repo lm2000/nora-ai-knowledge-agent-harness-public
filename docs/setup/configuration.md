@@ -45,8 +45,9 @@ The Docker launcher takes an explicit releases-root argument:
 In local mode it writes versioned bundles and advances `current` under that
 root. Match the mounted root to Retrieval's selection; `NORA_DATA_DIR` does not
 choose the launcher's output directory. The host CLI also requires a `releases`
-positional argument, but its
-[tokenizer handoff remains incomplete](../workflows/ingestion/README.md#operator-commands).
+positional argument, a verified local tokenizer cache at `NORA_MODEL_PATH`, and
+host-reachable BGE/Qdrant endpoints; see its
+[prerequisites](../workflows/ingestion/README.md#operator-commands).
 A literal release pin needs an explicit deployment change; see
 [activation](../workflows/ingestion/README.md#backups-and-activation).
 

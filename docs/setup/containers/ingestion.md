@@ -43,11 +43,12 @@ artifacts before activation and creates a complete release from the selected
 input. Additions therefore need separate jobs and `nora assemble` to retain the
 base corpus. Assembly is an operator CLI step, not a fifth job service.
 
-The host `nora knowledge-update` wrapper currently has a tokenizer handoff
-mismatch; it is not a usable alternative to this Docker route. The
-[workflow guide](../../workflows/ingestion/README.md#operator-commands) records
-that source limitation. Individual `nora job` entrypoints remain separate from
-the wrapper.
+The host `nora knowledge-update` wrapper uses a pinned local tokenizer for
+preparation and the shared BGE HTTP client for embedding. It needs its own
+verified model cache, Python extras, reachable endpoints and credentials; the
+[workflow guide](../../workflows/ingestion/README.md#operator-commands) owns
+those prerequisites. Individual `nora job` entrypoints remain separate from
+the wrapper. Source repair does not update installed images or running services.
 
 Without `NORA_GCS_POINTER`, the Docker launcher selects the release through local `current`. With it, the launcher uses `admin` to publish and conditionally advance the cloud pointer. A literal local-directory pin needs a separate deployment overlay/recreation; follow the [operator checklist](../../workflows/ingestion/knowledge-base-update-checklist.md#4-activate-retrieval).
 

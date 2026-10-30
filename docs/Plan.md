@@ -61,8 +61,10 @@ Owner review remains pending.
 the existing public repository update. The isolated candidate contains the 203
 allowlisted source files and a checksum receipt. Full contributor checks passed
 in the source tree and the candidate; the candidate Python wheel also built.
-Publication remains pending review of the prepared public diff and explicit
-authorization. No public push or website deployment is recorded by this step.
+The owner subsequently authorized publication. Public `main` now points to
+`5df4b0ffc3c7dddfc656aa21575db9fdb881997e`; anonymous HTTPS readback of the README,
+documentation index and checksum receipt matched the published snapshot.
+GitHub Actions was running at readback. Website deployment remains a later step.
 
 | Step | Dependency and result | Completion boundary |
 | --- | --- | --- |
@@ -81,7 +83,7 @@ change running Harness services. The separate Career plan owns resume/CL review.
 | Coordination | One coordinator, bounded retrieval/model calls and PostgreSQL checkpoints | Map planning and specialist delegation onto Deep Agents/LangGraph while preserving conversation contracts |
 | Model routes | Application adapters, selector and bounded fallback | Map simple/general/reasoning/specialized routes to configured models; measure quality, cost and latency |
 | Question answering | Grounded answer path and topic conversations | Representative multi-turn quality and failure-slice evaluation |
-| Ingestion | Separate conversion, preparation, embedding and import/verification jobs | Fix conversion defects and the host updater's tokenizer/preparation handoff before restoring that CLI route; verify selected corpus updates through the documented container path |
+| Ingestion | Separate jobs; local collision, failed-conversion and host-tokenizer repairs with regression coverage | Revalidate installed job images and the host route before a separately authorized corpus update |
 | Artifact review | Saved-response validation, exact-response decisions and a synthetic two-version cycle | Add separate Harbor Hub/Hugging Face execution routes and versioned judge definitions/registry |
 | Owner review | Explicit saved human decisions | Calibrate Synthetic Owner scores/thresholds against real decisions; verify both revision loops |
 | Deployment and recovery | Bounded dated checks in the deployment record | Revalidate affected targets and recovery after implementation changes |
@@ -93,6 +95,15 @@ checks. The local review example continues to replay saved responses.
 
 ## Execution progress
 
+**2026-10-29 — ingestion reliability and documentation cleanup.** The three
+ingestion repairs have regression coverage, and the remaining legacy document
+copies/local skill mirrors have been archived outside the public source tree.
+Full contributor checks now pass in the actual checkout; the ten logical
+refresh source identities retain their mapped paths. The owner authorized
+committing and pushing the source repairs. See the
+[cleanup validation](evaluation/VALIDATION.md#duplicate-documentation-cleanup--2026-10-29).
+Runtime deployment and corpus updates remain separate.
+
 Two earlier improvement cycles integrated engineering narrative, diagrams,
 examples, application fixes and source/release checks. Their dated outcomes,
 including the later reader pass, remain in the
@@ -101,8 +112,10 @@ has a separate integration check.
 
 Carry forward the existing engineering work:
 
-- Fix converted filename collisions and stop release preparation after a failed
-  source conversion, with regression coverage.
+- Ingestion reliability repairs are local: source-path-derived extraction names,
+  failed-conversion rejection and separate host tokenizer/HTTP embedding inputs.
+  The [validation record](evaluation/VALIDATION.md#ingestion-reliability-repair--2026-10-29)
+  owns test evidence; deployment and corpus updates remain separate actions.
 - Build a representative held-out retrieval and answer set. Keep earlier
   diagnostic results tied to their original corpora and methods.
 - Define external-review task, provider, budget and evidence contracts before

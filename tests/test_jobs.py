@@ -16,8 +16,10 @@ from nora.jobs import (
     active_release,
     knowledge_update,
     rollback_cloud,
+    run_convert,
     run_embed,
     run_import_verify,
+    run_prepare,
 )
 from nora.retrieval import RetrievalService, create_app
 
@@ -60,6 +62,149 @@ def make_source(tmp_path, name, content: str) -> Path:
     source.mkdir(parents=True)
     (source / "doc.md").write_text(content, encoding="utf-8")
     return source
+
+
+@pytest.mark.parametrize(
+    "names", [("report.md", "report.txt"), ("team/report.md", "team__report.md")]
+)
+def test_conversion_preserves_sources_with_colliding_output_names(tmp_path, encoder, names):
+    source = tmp_path / "source"
+    contents = ["# Atlas\nRelease requires a load test.\n", "# Cedar\nSupport is 24x7.\n"]
+    for name, content in zip(names, contents):
+        path = source / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content)
+    extracted = tmp_path / "extracted"
+    manifest = run_convert(source, extracted)
+    paths = [record["converted"] for record in manifest["reports"]]
+    assert len(set(paths)) == 2
+    assert {(extracted / path).read_text() for path in paths} == set(contents)
+    # Identities must not depend on the absolute staging directory or run order.
+    repeat = run_convert(source, tmp_path / "repeat")
+    assert repeat["reports"] == manifest["reports"]
+    prepared = tmp_path / "prepared"
+    assert run_prepare(extracted, prepared, encoder.tokenizer)["documents"] == 2
+    assert {path.read_text() for path in (prepared / "docs").glob("*.txt")} == set(contents)
+    assert [(source / name).read_text() for name in names] == contents
+
+
+def test_conversion_cli_fails_and_records_partial_failure(tmp_path, capsys):
+    from nora.cli import main
+
+    source = make_source(tmp_path, "source", "# Atlas\nA readable source.\n")
+    (source / "broken.txt").write_bytes(b"\xff\xfe")
+    extracted = tmp_path / "extracted"
+    assert main(["job", "convert", str(source), str(extracted)]) == 2
+    assert "Conversion failed" in capsys.readouterr().err
+    report = json.loads((extracted / "manifest.json").read_text())
+    assert any(row.get("failed") and row["source"] == "broken.txt" for row in report["reports"])
+    assert any(row.get("converted") and row["source"] == "doc.md" for row in report["reports"])
+
+
+def test_prepare_rejects_legacy_partial_conversion_manifest(tmp_path, encoder):
+    source = make_source(tmp_path, "source", "# Atlas\nA readable source.\n")
+    extracted = tmp_path / "extracted"
+    manifest = run_convert(source, extracted)
+    manifest["reports"].append({"source": "broken.pdf", "failed": True, "error": "bad PDF"})
+    (extracted / "manifest.json").write_text(json.dumps(manifest))
+    release = tmp_path / "release"
+    with pytest.raises(ValueError, match="failed"):
+        run_prepare(extracted, release, encoder.tokenizer)
+    assert not release.exists()
+
+
+@pytest.mark.parametrize("damage", ["missing_file", "duplicate_target"])
+def test_prepare_rejects_incomplete_or_aliased_conversion_outputs(tmp_path, encoder, damage):
+    source = make_source(tmp_path, "source", "# Atlas\nA readable source.\n")
+    (source / "second.md").write_text("# Cedar\nAnother readable source.\n")
+    extracted = tmp_path / "extracted"
+    manifest = run_convert(source, extracted)
+    if damage == "missing_file":
+        (extracted / manifest["reports"][0]["converted"]).unlink()
+    else:
+        manifest["reports"][1]["converted"] = manifest["reports"][0]["converted"]
+    (extracted / "manifest.json").write_text(json.dumps(manifest))
+    release = tmp_path / "release"
+    with pytest.raises(ValueError, match="[Cc]onverted"):
+        run_prepare(extracted, release, encoder.tokenizer)
+    assert not release.exists()
+
+
+def test_all_failed_conversion_retains_diagnostic_manifest(tmp_path):
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "broken.txt").write_bytes(b"\xff\xfe")
+    extracted = tmp_path / "extracted"
+    with pytest.raises(ValueError):
+        run_convert(source, extracted)
+    manifest = json.loads((extracted / "manifest.json").read_text())
+    assert manifest["reports"][0]["failed"]
+
+
+def test_failed_conversion_preserves_active_release_and_index(tmp_path, encoder, qdrant):
+    source = make_source(tmp_path, "source", "# Atlas\nA readable source.\n")
+    releases = tmp_path / "releases"
+    first = knowledge_update(source, releases, Settings(), encoder)
+    history = (releases / ".history").read_bytes()
+    collections = {item.name for item in qdrant.get_collections().collections}
+    (source / "broken.txt").write_bytes(b"\xff\xfe")
+    with pytest.raises(ValueError, match="Conversion failed"):
+        knowledge_update(source, releases, Settings(), encoder)
+    assert active_release(releases) == Path(first["release"])
+    assert (releases / ".history").read_bytes() == history
+    assert {item.name for item in qdrant.get_collections().collections} == collections
+    assert len(list(releases.glob("*/prepared"))) == 1
+
+
+def test_knowledge_update_cli_uses_local_tokenizer_and_http_embeddings(
+    tmp_path, monkeypatch, encoder, qdrant, capsys
+):
+    from nora.bge_client import BGEClient
+    from nora.cli import main
+    from nora.embedding import BGEEncoder
+
+    settings = Settings()
+    monkeypatch.setattr(Settings, "from_env", lambda: settings)
+    monkeypatch.setenv("NORA_BGE_TOKEN", "test-token")
+    monkeypatch.delenv("NORA_BGE_TOKEN_FILE", raising=False)
+    monkeypatch.setattr(BGEEncoder, "tokenizer", property(lambda self: encoder.tokenizer))
+
+    def no_local_inference(self):
+        pytest.fail("Host ingestion must not initialize local model weights")
+
+    def remote_encode(self, texts, query):
+        assert self.url == settings.bge_url.rstrip("/")
+        assert query is False
+        return encoder.encode(texts)
+
+    monkeypatch.setattr(BGEEncoder, "initialize", no_local_inference)
+    monkeypatch.setattr(BGEClient, "_request", remote_encode)
+    source = make_source(tmp_path, "source", "# Atlas\nRelease requires a load test.\n")
+    releases = tmp_path / "releases"
+    assert main(["knowledge-update", str(source), str(releases), "--collection", "cli-test"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["activated"]
+    assert active_release(releases) == Path(result["release"])
+    release = Path(result["release"])
+    assert json.loads((release / "job-import.json").read_text())["verified"]["verified"]
+    assert qdrant.count("cli-test").count > 0
+    assert [p.read_text() for p in (release / "docs").glob("*.txt")] == [
+        "# Atlas\nRelease requires a load test.\n"
+    ]
+
+
+def test_knowledge_update_cli_requires_cache_before_creating_release(tmp_path, monkeypatch, qdrant):
+    from nora.cli import main
+
+    settings = Settings(model_path=str(tmp_path / "missing-model-cache"))
+    monkeypatch.setattr(Settings, "from_env", lambda: settings)
+    monkeypatch.setenv("NORA_BGE_TOKEN", "test-token")
+    monkeypatch.delenv("NORA_BGE_TOKEN_FILE", raising=False)
+    source = make_source(tmp_path, "source", "# Atlas\nA readable source.\n")
+    releases = tmp_path / "releases"
+    assert main(["knowledge-update", str(source), str(releases)]) == 2
+    assert not releases.exists()
+    assert not qdrant.get_collections().collections
 
 
 def test_stage_handoffs_require_completed_previous_stages(tmp_path, encoder):

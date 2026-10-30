@@ -27,6 +27,21 @@ Preserve original bytes, substantive text, headings and provenance. The conversi
 
 Chunk within the embedding model's complete input limit. The current bundle retains document content hashes, chunk IDs and model configuration with the vectors. Token offsets are used internally for splitting; persisted chunk offsets and individual chunk-content hashes are not part of the current output. Embedding and interactive Retrieval use the same shared BGE service, with matching revision, dimensions and normalization and the appropriate document/query encoding modes. Bound batch load to preserve interactive capacity; see [shared BGE capacity](../../setup/containers/README.md#shared-bge-capacity).
 
+Conversion names each extracted Markdown file by the SHA-256 of its complete
+relative source path, including the extension. The extraction manifest maps
+that filename back to the original path and source checksum. This keeps
+`report.md` and `report.txt`, or `team/report.md` and `team__report.md`, distinct.
+Prepared document IDs remain content-based; exact duplicate text is still
+deduplicated by preparation.
+
+Any failed conversion stops the batch with a nonzero exit status after saving
+its manifest, including when every source fails. Preparation independently
+rejects failed-source reports, missing converted files and duplicate targets,
+including in older manifests. Correct the failed input and rerun into a new
+extraction directory; do not remove failure records to accept a partial batch.
+Unsupported formats remain explicitly reported skips. Conversion failure does
+not import a collection or advance the active release.
+
 A vector file alone is not an imported index. Import independently verifies point identity/counts and the matching document manifest. Each stage validates its input artifacts. Interrupted-run recovery and concurrent writers remain unverified.
 
 ## Add documents while retaining an existing bundle
@@ -86,15 +101,21 @@ root; GCS mode adds publication/activation through `admin`. Keep the root mounte
 where Retrieval expects its releases. A literal deployment pin is not rewritten.
 Originals remain unchanged; use a fresh collection name for each changed dataset.
 
-**Host wrapper limitation:** `nora knowledge-update` accepts explicit `source`
-and `releases` positional paths, but its current CLI passes a `BGEClient` to a
-preparation stage that requires `encoder.tokenizer`. The HTTP client has no
-tokenizer. Fixing that handoff is separate application work; credentials and
-endpoint configuration alone do not resolve it. See the
-[CLI](../../../src/nora/cli.py), [job runner](../../../src/nora/jobs.py) and
-[BGE client](../../../src/nora/bge_client.py). Individual `nora job` stages and the
-[real retrieval smoke test](../../setup/README.md#test-real-retrieval) use
-different paths and remain available with their stated prerequisites.
+**Host alternative:** `nora knowledge-update <source> <releases> --collection
+<new-collection>` runs the same stages in one host process. Preparation uses
+the pinned local BGE tokenizer from `NORA_MODEL_PATH`; embedding uses the
+shared BGE HTTP service. It does not initialize local model weights for
+inference. Install the embedding extra and create the verified cache as shown
+in [development setup](../../setup/README.md#test-real-retrieval); add the
+conversion extra for Docling formats. A missing or invalid tokenizer cache
+stops the command before release artifacts are created.
+
+The host must reach the configured BGE and Qdrant endpoints and supply their
+credentials; Compose-internal service names are not automatically host routes.
+Use the same complete-source, backup and activation requirements as the Docker
+launcher. Local regression coverage uses synthetic embeddings and an in-memory
+index; it does not establish a live host update or deploy this repair. See the
+[validation record](../../evaluation/VALIDATION.md#ingestion-reliability-repair--2026-10-29).
 
 ## GCS publication reference
 

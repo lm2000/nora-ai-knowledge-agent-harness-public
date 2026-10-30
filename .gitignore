@@ -84,6 +84,9 @@ memory/
 .private/
 .public-docs/
 
+# Workspace-local skill mirrors; canonical skills live in Agentic Tools
+/skills/
+
 # Generated operator-specific cloud plans
 setup/google-cloud/plan-output/*.txt
 

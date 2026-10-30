@@ -15,6 +15,8 @@ original scope.
 
 | Record date | Read this record | Boundary |
 | --- | --- | --- |
+| 2026-10-29 | [Duplicate documentation cleanup](#duplicate-documentation-cleanup--2026-10-29) | Full contributor checks pass in the source checkout; source-path compatibility preserved |
+| 2026-10-29 | [Ingestion reliability repair](#ingestion-reliability-repair--2026-10-29) | Collision/failure regressions and host CLI handoff; synthetic local checks, no live update |
 | 2026-10-29 | [Coordination indentation repair](#coordination-indentation-repair--2026-10-29) | Restored test collection; full configured pytest suite completed |
 | 2026-10-25 | [Documentation consolidation](#documentation-consolidation--2026-10-25) | Path migration, retained assets, source-ID compatibility and packaging checks |
 | 2026-10-25 | [Architect and Technical Writer follow-up](#architect-and-technical-writer-follow-up--2026-10-25) | Latest reviewed documentation, functional diagram labels and corrected setup/reference guidance |
@@ -31,6 +33,79 @@ For recorded running-service outcomes, use [deployment status](../setup/private-
 ![The workflows covered by the validation evidence below.](../architecture/diagrams/harness-workflows.gif)
 
 [Local browser version](../architecture/diagrams/harness-workflows.html)
+
+## Duplicate documentation cleanup — 2026-10-29
+
+Retired 49 remaining legacy document/diagram copies in favor of their canonical
+`docs/` counterparts. Their exact bytes and a path/checksum inventory are retained
+in the maintainer's ignored local archive. Archived the untracked local skill
+mirrors as well; canonical skills remain in Agentic Tools, and `/skills/` is
+ignored to prevent accidental reintroduction. Executable setup helpers, runtime
+data and historical evidence remain in place. Existing logical knowledge-refresh
+source IDs still resolve through the physical `source_paths` mapping.
+
+From the repository root in the owning Conda environment:
+
+```sh
+conda run --no-capture-output -n nora-ai make validate
+conda run --no-capture-output -n nora-ai python -m pytest -q operations/knowledge-refresh/test_refresh.py
+```
+
+Both commands passed: 333 Python tests, 8 skips, 11 subtests; 5 UI tests,
+TypeScript and the production UI build; lint/format and shell checks; 53 public
+documents and 572 local links; 16 HTML/GIF diagram pairs; and 203 allowlisted
+release files. The separate refresh tests passed 19 tests and 15 subtests.
+The three dependency deprecation warnings noted below remain. This resolves
+the checkout inventory blocker from the ingestion repair; no checker was
+disabled or relaxed. Owner authorized committing and pushing these source
+changes. No runtime deployment, corpus activation or public snapshot refresh
+was performed by this cleanup.
+
+## Ingestion reliability repair — 2026-10-29
+
+Reproduced nine failing regression cases before changing ingestion: same-stem
+and flattened-path output collisions, partial conversion returning success,
+preparation accepting a failed legacy manifest, missing/aliased converted
+files, all-failed conversion losing its diagnostic manifest, a failed batch
+advancing the active release, and the host CLI accessing a nonexistent
+`BGEClient.tokenizer`.
+
+Conversion now derives output names from the complete relative source path,
+uses exclusive writes, retains diagnostics and raises on any conversion
+failure. Preparation independently checks failed reports and converted targets.
+The host CLI passes the pinned local tokenizer separately from the HTTP
+embedding client. An additional prerequisite test confirms that a missing
+model cache stops before creating release artifacts.
+
+From the repository root in the owning `nora-ai` Conda environment:
+
+```sh
+conda run --no-capture-output -n nora-ai make test lint
+```
+
+Result: **333 tests passed, 8 skipped and 11 subtests passed**; Ruff lint and
+format checks passed. Three dependency deprecation warnings remain (Starlette
+and AG-UI/LangGraph). Ten new regression/prerequisite cases cover the changes.
+The host CLI check runs conversion, preparation, import verification and local
+activation using a real `BGEClient` with its HTTP request replaced by a
+deterministic response, a tokenizer double and an in-memory Qdrant index. It
+also rejects local model-weight initialization. Failure checks confirm that
+the previous active release, activation history and collection inventory stay
+unchanged. Original fixture bytes remain intact.
+
+UI tests (5), TypeScript checks, the production UI build, shell syntax and the
+203-file release allowlist check also passed. Repository-wide `make linkcheck`
+and `make diagrams` stop at a pre-existing manifest inventory mismatch: legacy
+root documentation copies and local `skills/` documents remain outside
+`public-docs.json`. Those files were not removed or added to the public list.
+Checking a temporary copy of the 203 allowlisted files passed: 53 documents,
+570 local links and the existing diagram inventory. This scoped result does
+not make the original checkout's documentation inventory checks green.
+
+This validates local source contracts, not real Docling extraction, BGE quality,
+host networking, installed Docker images or cloud activation. No existing
+corpus, running service or deployment was updated. Earlier live evidence below
+retains its original scope.
 
 ## Coordination indentation repair — 2026-10-29
 

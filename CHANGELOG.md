@@ -1,5 +1,14 @@
 # Changelog
 
+## Ingestion reliability — 2026-10-29
+
+- Preserve distinct conversion outputs for source paths that previously collided.
+- Stop incomplete conversion batches, retain failure reports and reject partial
+  or aliased extraction manifests before preparation.
+- Pass the pinned local tokenizer separately from the shared BGE HTTP client in
+  the host knowledge-update command. Local source repair only; no corpus update
+  or deployment is implied.
+
 ## Documentation and diagram consistency — 2026-10-21
 
 - Separate source architecture, client routes and recorded deployment configuration.

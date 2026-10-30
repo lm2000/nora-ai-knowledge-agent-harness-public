@@ -12,6 +12,7 @@ from typing import Any
 
 import numpy as np
 
+from nora.common import digest
 from nora.config import Settings
 from nora.conversion import convert as convert_one
 from nora.documents import (
@@ -93,13 +94,16 @@ def run_convert(source_dir: Path, output_dir: Path) -> dict:
                 {"source": str(relative), "skipped": True, "reason": "unsupported_format"}
             )
             continue
-        name = relative.with_suffix(".md").as_posix().replace("/", "__")
+        # Keep the full relative identity, including the extension. Flattening
+        # separators or replacing suffixes aliases distinct selected sources.
+        name = digest(relative.as_posix().encode("utf-8")) + ".md"
         target = files_dir / name
         target.parent.mkdir(parents=True, exist_ok=True)
         try:
             if source.suffix.lower() in {".md", ".txt"}:
                 text = source.read_text(encoding="utf-8")
-                target.write_text(text, encoding="utf-8")
+                with target.open("x", encoding="utf-8") as output:
+                    output.write(text)
                 provenance = {"source_sha256": _sha256_file(source)}
             else:
                 import tempfile as _tf
@@ -107,7 +111,11 @@ def run_convert(source_dir: Path, output_dir: Path) -> dict:
                 with _tf.TemporaryDirectory(prefix=".nora-docling-", dir=files_dir) as tmp:
                     stage = Path(tmp) / "stage"
                     provenance = convert_one(source, stage)
-                    (stage / "document.md").rename(target)
+                    with (
+                        (stage / "document.md").open("rb") as document,
+                        target.open("xb") as output,
+                    ):
+                        shutil.copyfileobj(document, output)
             reports.append(
                 {
                     "source": str(relative),
@@ -117,12 +125,15 @@ def run_convert(source_dir: Path, output_dir: Path) -> dict:
             )
         except Exception as error:
             reports.append({"source": str(relative), "failed": True, "error": str(error)})
-    if not any(r.get("converted") for r in reports):
-        raise ValueError("No documents were converted")
     manifest = {"stage": "convert", "files_dir": "files", "reports": reports}
     (output_dir / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
+    failed = sum(bool(report.get("failed")) for report in reports)
+    if failed:
+        raise ValueError(f"Conversion failed for {failed} source(s); inspect manifest.json")
+    if not any(r.get("converted") for r in reports):
+        raise ValueError("No documents were converted")
     return manifest
 
 
@@ -135,9 +146,23 @@ def run_prepare(extracted_dir: Path, release_dir: Path, tokenizer) -> dict:
     manifest = json.loads(manifest_path.read_text())
     if manifest.get("stage") != "convert":
         raise ValueError("Input is not a completed conversion stage")
+    reports = manifest.get("reports", [])
+    if any(report.get("failed") for report in reports):
+        raise ValueError("Conversion contains failed sources; rerun conversion before preparation")
     files_dir = extracted_dir / manifest.get("files_dir", "files")
     if not files_dir.is_dir():
         raise ValueError("Converted files directory missing")
+    converted = [
+        extracted_dir / report["converted"] for report in reports if report.get("converted")
+    ]
+    resolved = [path.resolve() for path in converted]
+    if not converted or len(set(resolved)) != len(resolved):
+        raise ValueError("Converted file inventory is empty or contains duplicate targets")
+    if any(
+        path.is_symlink() or not path.is_file() or not target.is_relative_to(files_dir.resolve())
+        for path, target in zip(converted, resolved)
+    ):
+        raise ValueError("Converted file is missing or outside the extraction files directory")
     coverage = prepare_texts(files_dir, release_dir, tokenizer)
     (release_dir / "job-prepare.json").write_text(
         json.dumps(
@@ -334,10 +359,15 @@ def knowledge_update(
     settings: Settings,
     encoder: Any,
     *,
+    tokenizer=None,
     collection: str | None = None,
     gcs_client=None,
 ) -> dict:
     """Run the four jobs in order, validate, and activate the new release."""
+    # Local encoders may supply their own tokenizer; HTTP encoders cannot.
+    # Resolve preparation dependencies before creating release artifacts.
+    if tokenizer is None:
+        tokenizer = encoder.tokenizer
     releases_root = releases_root.resolve()
     releases_root.mkdir(parents=True, exist_ok=True)
 
@@ -365,7 +395,7 @@ def knowledge_update(
     collection = collection or f"{settings.collection}_{release_dir.name}"
 
     run_convert(source_dir, extracted)
-    run_prepare(extracted, prepared, encoder.tokenizer)
+    run_prepare(extracted, prepared, tokenizer)
     run_embed(prepared, encoder, qdrant_collection=collection)
     run_import_verify(prepared, settings)
     if settings.gcs_pointer:

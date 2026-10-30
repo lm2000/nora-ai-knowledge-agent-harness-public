@@ -185,9 +185,9 @@ shared with the Linux VM so credentials and data can be mounted.
 For an isolated development acceptance run that owns and cleans up a separate
 project, use `scripts/docker_acceptance.sh`. It uses synthetic services as
 described in [validation](../workflows/ingestion/README.md#verification-commands).
-The host `nora knowledge-update` wrapper has a
-[tokenizer handoff limitation](../workflows/ingestion/README.md#operator-commands);
-use the Docker launcher above for this installation route.
+Use the Docker launcher above for this installation route. The host
+`nora knowledge-update` alternative has separate
+[tokenizer-cache and service-access prerequisites](../workflows/ingestion/README.md#operator-commands).
 
 ## Private access with Tailscale
 

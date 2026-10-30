@@ -223,7 +223,12 @@ def main(argv=None) -> int:
 
             client = BGEClient.from_settings(settings)
             result = knowledge_update(
-                args.source, args.releases, settings, client, collection=args.collection
+                args.source,
+                args.releases,
+                settings,
+                client,
+                tokenizer=BGEEncoder(settings.model_path).tokenizer,
+                collection=args.collection,
             )
         elif args.command == "activate":
             from nora.jobs import _publisher_gcs_client, activate
