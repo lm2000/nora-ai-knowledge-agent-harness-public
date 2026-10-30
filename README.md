@@ -56,7 +56,7 @@ definitions.
 
 ## Project engineering
 
-Michael Lvov built the application boundaries and integration code. Upstream
+[Michael Lvov](https://www.linkedin.com/in/michael-lvov-lm) built the application boundaries and integration code. Upstream
 frameworks provide execution, persistence, protocols and models.
 
 | Project work | Foundation |
