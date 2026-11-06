@@ -1,9 +1,9 @@
 # Nora Intelligence System — AI Agent Harness
 
-I built Nora as a self-hosted harness for answering questions from a private,
-versioned document collection. I designed the service boundaries and implemented
-bounded retrieval and model calls, PostgreSQL conversation checkpoints, and
-separate ingestion jobs that verify a knowledge release before it becomes active.
+Nora is a self-hosted harness for answering questions from a private, versioned
+document collection. It bounds retrieval and model calls, stores conversation
+checkpoints in PostgreSQL, and runs ingestion separately so each knowledge release
+can be verified before activation.
 
 That separation lets a conversation keep its context while the corpus is updated
 independently. The fictional Atlas walkthrough shows a question about release
@@ -55,8 +55,8 @@ definitions.
 
 ## Project engineering
 
-[Michael Lvov](https://www.linkedin.com/in/michael-lvov-lm) built the application boundaries and integration code. Upstream
-frameworks provide execution, persistence, protocols and models.
+Upstream frameworks provide execution, persistence, protocols and models. The
+table shows what Nora adds on top of those foundations.
 
 | Project work | Foundation |
 | --- | --- |
