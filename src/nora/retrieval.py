@@ -31,6 +31,11 @@ from nora.indexing import connect
 RELEASE_PIN = contextvars.ContextVar("nora_release", default=None)
 
 
+class ReleaseUnavailable(RuntimeError):
+    def __init__(self):
+        super().__init__("Requested release is unavailable")
+
+
 class Release(Protocol):
     @property
     def collection(self) -> str: ...
@@ -119,7 +124,7 @@ def _local_pin_is_valid(pin: str, settings: Settings) -> Path | None:
         path = Path(pin).resolve()
         root = settings.releases_root.resolve()
         path.relative_to(root)
-    except (ValueError, RuntimeError):
+    except (ValueError, RuntimeError, OSError):
         return None
     if not (path / "job-import.json").exists():
         return None
@@ -160,13 +165,14 @@ def pinned_release(settings: Settings, pin: str, client=None) -> Release | None:
 
 
 def resolved_release(settings: Settings, client=None) -> Release | None:
-    """Pinned release wins; otherwise resolve the authoritative active release."""
+    """Use the active release only when the request omits a pin."""
     pin = RELEASE_PIN.get()
-    if pin:
-        release = pinned_release(settings, pin, client)
-        if release is not None:
-            return release
-    return current_release(settings, client)
+    if pin is None:
+        return current_release(settings, client)
+    release = pinned_release(settings, pin, client)
+    if release is None:
+        raise ReleaseUnavailable()
+    return release
 
 
 class RetrievalService:
@@ -191,6 +197,8 @@ class RetrievalService:
             release = resolved_release(self.settings, self._gcs_client)
             if release is not None:
                 return release
+        if RELEASE_PIN.get() is not None:
+            raise ReleaseUnavailable()
         if self.store is not None:
             # Test fallback: an explicit prepared bundle passed directly into the service.
             if self.data_dir.is_dir() and (self.data_dir / "coverage.json").exists():
@@ -286,10 +294,10 @@ class ReleasePinMiddleware:
                 try:
                     release = value.decode("utf-8")
                 except UnicodeDecodeError:
-                    pass
+                    release = ""
                 break
         token = None
-        if release:
+        if release is not None:
             token = RELEASE_PIN.set(release)
         try:
             await self.app(scope, receive, send)
@@ -340,7 +348,10 @@ def create_app(
     app.add_middleware(ReleasePinMiddleware, settings=settings)
 
     def release_endpoint(request):
-        release = resolved_release(settings, getattr(service, "_gcs_client", None))
+        try:
+            release = resolved_release(settings, getattr(service, "_gcs_client", None))
+        except ReleaseUnavailable as error:
+            return JSONResponse({"error": str(error)}, status_code=503)
         return JSONResponse(
             {
                 "release": _release_id(release) if release else None,

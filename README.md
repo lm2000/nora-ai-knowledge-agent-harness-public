@@ -75,14 +75,15 @@ the [repository map](docs/README.md) points to their implementation owners.
 
 An operator can activate a new knowledge release between an agent's search and
 its follow-up read. If the original release becomes unavailable, silently using
-the active release can mix evidence from two versions in one answer. The
-locally tested follow-up makes an unavailable explicit pin return an error.
+the active release can mix evidence from two versions in one answer. Retrieval
+now returns an error when an explicit pin is unavailable.
+[Release resolution code](src/nora/retrieval.py#L167)
 
 The regression test searches release A, activates release B, then reads with
 the original pin. The read succeeds while A is available and returns an MCP
 tool error when A is unavailable. Both releases contain the same document ID,
 so a successful read would otherwise hide the fallback. An unpinned read still
-succeeds against B. The public snapshot predates this follow-up.
+succeeds against B. [Regression test](tests/test_jobs.py#L452)
 
 ## Try the review example
 

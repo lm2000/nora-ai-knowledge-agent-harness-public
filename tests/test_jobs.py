@@ -448,17 +448,18 @@ def test_release_pin_header_overrides_current_symlink(tmp_path, encoder, qdrant)
         assert response.json()["release"] == str(res_a["release"])
 
 
-def test_search_and_read_pin_pinned_release_across_symlink_change(tmp_path, encoder, qdrant):
+@pytest.mark.parametrize("pin_available", [True, False])
+def test_search_and_read_across_release_change(tmp_path, encoder, qdrant, pin_available):
     from fastapi.testclient import TestClient
 
     releases = tmp_path / "releases"
     settings = Settings(releases_root=releases, data_dir=releases / "current")
     source_a = make_source(tmp_path, "source_a", "# Atlas\nAtlas ships on October 12, 2026.\n")
-    source_b = make_source(tmp_path, "source_b", "# Cedar\nCedar support is 24x7.\n")
+    # Keep the same document ID readable in B so a silent fallback would succeed.
+    source_b = make_source(tmp_path, "source_b", "# Atlas\nAtlas ships on October 12, 2026.\n")
+    (source_b / "cedar.md").write_text("# Cedar\nCedar support is 24x7.\n")
     res_a = knowledge_update(source_a, releases, settings, encoder)
-    knowledge_update(source_b, releases, settings, encoder)
 
-    # Build retrieval with settings so it resolves the active release (B).
     service = RetrievalService(
         qdrant,
         encoder,
@@ -497,9 +498,22 @@ def test_search_and_read_pin_pinned_release_across_symlink_change(tmp_path, enco
         results = found.get("structuredContent", json.loads(found["content"][0]["text"]))["results"]
         assert any("October 12" in hit["text"] for hit in results)
         doc_id = results[0]["doc_id"]
-        read = rpc("tools/call", {"name": "read", "arguments": {"doc_id": doc_id, "limit": 200}})
-        text = read.get("structuredContent", json.loads(read["content"][0]["text"]))["text"]
-        assert "October 12" in text
+        res_b = knowledge_update(source_b, releases, settings, encoder)
+        if not pin_available:
+            (Path(res_a["release"]) / "job-import.json").unlink()
+        read_args = {"name": "read", "arguments": {"doc_id": doc_id, "limit": 200}}
+        read = rpc("tools/call", read_args)
+        if pin_available:
+            assert client.get("/release", headers=headers).json()["release"] == res_a["release"]
+            assert "October 12" in json.loads(read["content"][0]["text"])["text"]
+        else:
+            assert read["isError"] is True
+            assert "structuredContent" not in read
+
+        del headers["X-Nora-Release"]
+        assert client.get("/release", headers=headers).json()["release"] == res_b["release"]
+        active_read = rpc("tools/call", read_args)
+        assert "October 12" in json.loads(active_read["content"][0]["text"])["text"]
 
 
 def test_concurrent_activations_leave_one_valid_current(tmp_path, encoder, qdrant):
@@ -543,8 +557,8 @@ def test_concurrent_activations_leave_one_valid_current(tmp_path, encoder, qdran
     assert any(release_b.name in line for line in history)
 
 
-def test_invalid_release_pin_is_ignored(tmp_path, encoder, qdrant):
-    """A pinned release outside the releases root or without job-import is ignored."""
+def test_invalid_release_pin_is_rejected(tmp_path, encoder, qdrant):
+    """Only an omitted pin can select the active release."""
     from fastapi.testclient import TestClient
 
     releases = tmp_path / "releases"
@@ -562,24 +576,17 @@ def test_invalid_release_pin_is_ignored(tmp_path, encoder, qdrant):
     )
     app = create_app(settings, service, token="test")
     with TestClient(app, base_url="http://localhost:8001") as client:
-        # Outside root: should fall back to current.
-        response = client.get(
-            "/release",
-            headers={
-                "Authorization": "Bearer test",
-                "X-Nora-Release": "/tmp/outside",
-            },
-        )
-        assert response.status_code == 200
-        assert response.json()["release"] == str(active_release(releases))
-
-        # Missing job-import.json: should fall back to current.
-        empty = tmp_path / "empty_release"
+        empty = releases / "empty_release"
         empty.mkdir()
-        response = client.get(
-            "/release",
-            headers={"Authorization": "Bearer test", "X-Nora-Release": str(empty)},
-        )
+        for pin in ("/tmp/outside", str(empty), "", b"\xff"):
+            response = client.get(
+                "/release",
+                headers={"Authorization": "Bearer test", "X-Nora-Release": pin},
+            )
+            assert response.status_code == 503
+            assert response.json() == {"error": "Requested release is unavailable"}
+
+        response = client.get("/release", headers={"Authorization": "Bearer test"})
         assert response.status_code == 200
         assert response.json()["release"] == str(active_release(releases))
 
