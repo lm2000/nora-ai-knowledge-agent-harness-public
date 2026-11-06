@@ -1,19 +1,18 @@
 # Nora Intelligence System — AI Agent Harness
 
-Nora Intelligence System (NIS) helps a person turn knowledge into answers and
-reviewed work. Its AI Coordinator plans a task, delegates focused work, chooses
-model routes and brings the results together. This independent engineering
-project connects agent execution, retrieval, persistent conversations, knowledge
-updates and human approval.
+I built Nora as a self-hosted harness for answering questions from a private,
+versioned document collection. I designed the service boundaries and implemented
+bounded retrieval and model calls, PostgreSQL conversation checkpoints, and
+separate ingestion jobs that verify a knowledge release before it becomes active.
 
-**Example:** “Prepare an Atlas release briefing.” NIS retrieves the release plan,
-checks the decisions and drafts a briefing. Role-based judges review the draft;
-the coordinator revises it before the owner decides whether to accept it.
+That separation lets a conversation keep its context while the corpus is updated
+independently. The fictional Atlas walkthrough shows a question about release
+blockers. A separate offline replay shows how reviewer feedback changes a draft
+briefing and leaves the delivery decision with a human.
 
-Knowledge needs to outlive a chat and grow beyond what fits in a model request.
-The **Knowledge Backbone** retains prepared sources and a searchable index;
-Retrieval MCP brings relevant passages into a bounded context. The AI Coordinator
-organizes the work that uses that knowledge, from an answer to a reviewed artifact.
+[Explore the architecture](https://nora-intelligence-system.com/architecture/) ·
+[Follow the Atlas walkthrough](https://nora-intelligence-system.com/walkthroughs/?flow=request&step=current-question) ·
+[Run the Atlas replay](https://nora-intelligence-system.com/reproduce/#atlas-replay)
 
 ## The architecture
 
@@ -46,7 +45,7 @@ can use suitable model backends such as Ollama and Fireworks.
 | [Ingestion](docs/workflows/ingestion/README.md) | Add a revised guide alongside retained knowledge | A verified, explicitly activated knowledge release |
 | [Artifact evaluation and revision](docs/workflows/artifact-review/README.md) | Review and improve the Atlas briefing | Feedback, revisions and a human acceptance decision |
 
-Evaluation uses separate coordinator routes to Harbor Hub and Hugging Face.
+In the target design, evaluation uses separate coordinator routes to Harbor Hub and Hugging Face.
 Research into the role, domain and sources shapes versioned judge definitions.
 Prepared Harbor tasks and datasets form the **NIS Judge Registry**. Judges give
 feedback; a Synthetic Owner scores progress and recommends acceptance or
