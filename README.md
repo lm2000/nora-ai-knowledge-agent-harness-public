@@ -14,6 +14,10 @@ briefing and leaves the delivery decision with a human.
 [Follow the Atlas walkthrough](https://nora-intelligence-system.com/walkthroughs/?flow=request&step=current-question) ·
 [Run the Atlas replay](https://nora-intelligence-system.com/reproduce/#atlas-replay)
 
+For the personal motivation and longer-term goals, read
+[Why I built the Nora Harness](https://nora-intelligence-system.com/motivation/).
+The page distinguishes implemented behavior from the broader design.
+
 ## The architecture
 
 The overview describes the accepted design. [Setup](docs/setup/README.md),
