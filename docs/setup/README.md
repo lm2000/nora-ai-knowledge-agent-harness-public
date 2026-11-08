@@ -16,6 +16,21 @@ owns the accepted workflow design; [Coordination](containers/coordination.md#cli
 owns the question/optional-UUID interfaces, and [deployment status](private-deployment/STATUS.md)
 owns dated running-service and conversational evidence.
 
+## Offline review only
+
+For the shortest runnable example, install only the base Python package. From
+the repository root with Conda available:
+
+```bash
+conda create -n nora-review python=3.12 pip
+conda run -n nora-review python -m pip install -c requirements.lock -e .
+```
+
+Then run the [review example](../../README.md#try-the-review-example).
+Installation needs internet access; the example runs offline with bundled
+fictional responses. No model credentials, Docker, PostgreSQL or browser UI
+are needed. Continue below for full development setup.
+
 ## Install for development
 
 Use Python 3.12, Node.js 22.22 or newer, pnpm 12.8.1, Conda and Make. Run commands from the repository root:

@@ -8,6 +8,9 @@ Start with this short review route:
 2. [Architecture](architecture/architecture-concept.md): why components exist and
    how knowledge, coordination and review fit together.
 3. [Decisions](Decisions.md): constraints, alternatives and consequences.
+4. [Offline example](setup/README.md#offline-review-only): replay the fictional
+   review cycle without services or model calls, then inspect
+   [validation and its limits](evaluation/VALIDATION.md).
 
 The topic map below points to the owning guide for deeper questions. For
 example, architecture explains why Ingestion runs outside conversations; the

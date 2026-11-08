@@ -2,8 +2,7 @@
 
 Nora is a self-hosted harness for answering questions from a private, versioned
 document collection. It bounds retrieval and model calls, stores conversation
-checkpoints in PostgreSQL, and runs ingestion separately so each knowledge release
-can be verified before activation.
+checkpoints in PostgreSQL, and runs ingestion separately from conversations.
 
 That separation lets a conversation keep its context while the corpus is updated
 independently. The fictional Atlas walkthrough shows a question about release
@@ -59,8 +58,9 @@ definitions.
 
 ## Project engineering
 
-Upstream frameworks provide execution, persistence, protocols and models. The
-table shows what Nora adds on top of those foundations.
+[Michael Lvov](https://www.linkedin.com/in/michael-lvov-lm) built the application boundaries and integration code. Upstream
+frameworks provide execution, persistence, protocols and models. The table shows
+what Nora adds on top of those foundations.
 
 | Project work | Foundation |
 | --- | --- |
@@ -91,11 +91,11 @@ succeeds against B. [Regression test](tests/test_jobs.py#L452)
 
 ## Try the review example
 
-After [installing the source](docs/setup/README.md#install-for-development), run from
+After the [minimal offline installation](docs/setup/README.md#offline-review-only), run from
 the repository root with a new output directory:
 
 ```bash
-nora review-example --output .private/atlas-review-cycle
+conda run -n nora-review nora review-example --output .private/atlas-review-cycle
 ```
 
 Expected result: two synthetic saved reviews, explicit decisions and a corrected
