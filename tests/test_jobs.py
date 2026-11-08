@@ -670,6 +670,107 @@ def test_cloud_pointer_activation_and_retrieval(tmp_path, encoder, qdrant):
         assert "October 12" in text
 
 
+def test_cloud_release_pin_survives_activation_and_fails_when_unavailable(
+    tmp_path, encoder, qdrant
+):
+    """An unavailable GCS manifest pin must never fall through to the active release."""
+    from fake_gcs import FakeGCSClient
+    from fastapi.testclient import TestClient
+
+    releases = tmp_path / "releases"
+    local_settings = Settings(releases_root=releases, data_dir=releases / "current")
+    source_a = make_source(tmp_path, "source_a", "# Atlas\nAtlas ships on October 12, 2026.\n")
+    source_b = make_source(tmp_path, "source_b", "# Atlas\nAtlas ships on October 12, 2026.\n")
+    (source_b / "cedar.md").write_text("# Cedar\nCedar support is 24x7.\n")
+    res_a = knowledge_update(source_a, releases, local_settings, encoder)
+    cloud = FakeGCSClient()
+    pointer_a = activate_cloud(
+        releases,
+        Path(res_a["release"]),
+        "nora-test-bucket",
+        "releases",
+        "releases/current.json",
+        cloud,
+        collection=res_a["collection"],
+    )
+    entry_a = pointer_a["active_manifest"]
+    pin_a = f"{entry_a['object']}#{entry_a['generation']}"
+    settings = Settings(
+        releases_root=releases,
+        data_dir=releases / "current",
+        gcs_pointer="gs://nora-test-bucket/releases/current.json",
+    )
+    service = RetrievalService(
+        qdrant,
+        encoder,
+        None,
+        collection=settings.collection,
+        data_dir=settings.data_dir,
+        settings=settings,
+        gcs_client=cloud,
+    )
+    with TestClient(
+        create_app(settings, service, token="test"), base_url="http://localhost:8001"
+    ) as client:
+        headers = {
+            "Authorization": "Bearer test",
+            "Accept": "application/json, text/event-stream",
+            "X-Nora-Release": pin_a,
+        }
+
+        def rpc(method, params):
+            response = client.post(
+                "/mcp",
+                json={"jsonrpc": "2.0", "id": 1, "method": method, "params": params},
+                headers=headers,
+            )
+            assert response.status_code == 200, response.text
+            return response.json()["result"]
+
+        initialized = rpc(
+            "initialize",
+            {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {},
+                "clientInfo": {"name": "test", "version": "1"},
+            },
+        )
+        headers["MCP-Protocol-Version"] = initialized["protocolVersion"]
+        found = rpc("tools/call", {"name": "search", "arguments": {"query": "Atlas ship date"}})
+        doc_id = json.loads(found["content"][0]["text"])["results"][0]["doc_id"]
+        res_b = knowledge_update(source_b, releases, local_settings, encoder)
+        pointer_b = activate_cloud(
+            releases,
+            Path(res_b["release"]),
+            "nora-test-bucket",
+            "releases",
+            "releases/current.json",
+            cloud,
+            collection=res_b["collection"],
+        )
+        read_args = {"name": "read", "arguments": {"doc_id": doc_id, "limit": 200}}
+        assert client.get("/release", headers=headers).json()["release"] == pin_a
+        assert (
+            "October 12" in json.loads(rpc("tools/call", read_args)["content"][0]["text"])["text"]
+        )
+
+        # Remove only A's generation; B retains the same document and could hide a fallback.
+        del cloud._buckets["nora-test-bucket"][entry_a["object"]][entry_a["generation"]]
+        assert client.get("/release", headers=headers).status_code == 503
+        assert rpc("tools/call", read_args)["isError"] is True
+        headers["X-Nora-Release"] = "outside-prefix/manifest.json#1"
+        assert client.get("/release", headers=headers).status_code == 503
+        assert rpc("tools/call", read_args)["isError"] is True
+        del headers["X-Nora-Release"]
+        entry_b = pointer_b["active_manifest"]
+        assert client.get("/release", headers=headers).json()["release"] == (
+            f"{entry_b['object']}#{entry_b['generation']}"
+        )
+        assert (
+            "October 12" in json.loads(rpc("tools/call", read_args)["content"][0]["text"])["text"]
+        )
+
+
 def test_cloud_pointer_rollback(tmp_path, encoder, qdrant):
     """Rollback rewinds the authoritative cloud pointer to the previous manifest."""
     from fake_gcs import FakeGCSClient
