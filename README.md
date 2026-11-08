@@ -103,6 +103,8 @@ Atlas briefing. The example adds a missing prerequisite, rejects invented timing
 and avoids duplicating an existing section. It makes no model or evaluation
 service request.
 
+Read the revised briefing in `.private/atlas-review-cycle/revision/artifact.json` (the `text` field).
+
 ## Evidence and further reading
 
 | Evidence | What it establishes |
