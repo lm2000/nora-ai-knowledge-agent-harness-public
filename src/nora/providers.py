@@ -33,6 +33,11 @@ class ProviderSpec:
     relative_cost: float = 1.0  # assumption, not a measured price
     relative_latency: float = 1.0  # assumption, not a measured latency
     capability_tags: tuple[str, ...] = ()
+    output_tokens: int = 1800
+
+    def __post_init__(self):
+        if type(self.output_tokens) is not int or self.output_tokens <= 0:
+            raise ConfigurationError("output_tokens must be a positive integer")
 
 
 def _token_for(spec: ProviderSpec, *, required: bool = False) -> str | None:
@@ -65,7 +70,7 @@ def build_ollama(spec: ProviderSpec, timeout: int) -> BaseChatModel:
         base_url=spec.base_url,
         client_kwargs=options,
         temperature=0,
-        num_predict=1800,
+        num_predict=spec.output_tokens,
         num_ctx=spec.context_length,
     )
 
@@ -87,7 +92,7 @@ def _openai_compatible(spec: ProviderSpec, timeout: int) -> BaseChatModel:
         api_key=token,
         base_url=spec.base_url,
         temperature=0,
-        max_tokens=1800,
+        max_tokens=spec.output_tokens,
         timeout=timeout,
     )
 

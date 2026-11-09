@@ -27,6 +27,21 @@ Preserve original bytes, substantive text, headings and provenance. The conversi
 
 Chunk within the embedding model's complete input limit. The current bundle retains document content hashes, chunk IDs and model configuration with the vectors. Token offsets are used internally for splitting; persisted chunk offsets and individual chunk-content hashes are not part of the current output. Embedding and interactive Retrieval use the same shared BGE service, with matching revision, dimensions and normalization and the appropriate document/query encoding modes. Bound batch load to preserve interactive capacity; see [shared BGE capacity](../../setup/containers/README.md#shared-bge-capacity).
 
+Operator-selected source adapters can also normalize assistant history, saved
+context, project documents and owned source code into this text contract. For
+example, a fictional design conversation can retain its thread/turn identity
+and source date alongside a revised project note. Preserve substantive text;
+record moved paths as location aliases and account for unsupported inputs.
+Summaries are optional, separately identified derived documents, linked to
+their source versions. Their failure must not prevent original-source ingestion.
+
+For a large offline batch, an operator may select temporary embedding compute
+that uses the same pinned weights, tokenizer, document mode, pooling, precision
+and normalization as the query service. Check vector agreement before bulk work,
+retain completed batches and verify the returned bundle before import. This
+changes execution capacity, not the embedding representation, retained-base
+requirement or single activation writer. The default remains shared BGE.
+
 Conversion names each extracted Markdown file by the SHA-256 of its complete
 relative source path, including the extension. The extraction manifest maps
 that filename back to the original path and source checksum. This keeps
@@ -158,3 +173,17 @@ The first checks conversion against a synthetic DOCX. The second builds and runs
 ## Incremental behavior still to complete
 
 Identical imports and additive assembly are supported. Replacement/deletion, interrupted-batch recovery and concurrent writers remain unverified. A changed point inventory needs a new collection without overwriting the running index. A full rebuild handles a complete desired dataset; it does not establish resumability or safe concurrent writes. See [deployment evidence](../../setup/private-deployment/STATUS.md) for dated live results.
+
+## Optional source adapters
+
+Private source adapters can prepare chat turns, current first-party code and
+project documents as sanitized Markdown before the existing ingestion jobs.
+For example, an implementation discussion and its code file remain separate,
+source-linked records; a generated summary is an additional derived document.
+Keep these adapters separate from any existing narrow source allowlist.
+
+Exclude credentials, injected runtime prompts, dependency trees and generated
+processing output. Report unsupported media and changing sources explicitly.
+Provider failures may defer summaries while original text remains eligible for
+an additive release. Local adapter tests do not establish a live corpus update;
+use the same retained-base, backup, import and activation procedure above.

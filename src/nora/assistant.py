@@ -122,6 +122,7 @@ def load_assistant_config(settings: Settings) -> AssistantConfig:
                     supports_tools=raw.get("tools", True),
                     supports_streaming=raw.get("streaming", True),
                     context_length=raw.get("context_length", 16000),
+                    output_tokens=raw.get("output_tokens", 1800),
                     quality_tier=raw.get("quality_tier", 3),
                     relative_cost=float(raw.get("relative_cost", 1.0)),
                     relative_latency=float(raw.get("relative_latency", 1.0)),

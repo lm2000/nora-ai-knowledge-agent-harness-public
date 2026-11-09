@@ -129,3 +129,17 @@ Historical experiments remain in Git history and dated evaluation/deployment
 records. Private Operations Guidance owns operational coordination. Editing or
 validating documentation does not activate ingestion, change services or
 publish the website.
+
+### Broad local knowledge sources — implementation candidate
+
+A separate private collector/driver adds Codex turns and local project text as
+sanitized, source-linked documents. Optional cloud summaries remain distinct
+from originals. Local tests exercise changing files, excluded roots, provider
+cache identity, uncertain-call recovery and retained-base release orchestration.
+The existing selected-document scanner and deployment observer stay unchanged.
+The owner authorized initial processing and activation. A bounded first update
+passed retained-base import, conditional activation and source readback; the
+broad immutable snapshot is still being processed with checkpoint reuse.
+Temporary capacity changes preserve the embedding representation and one
+activation writer. Daily scheduling and public publication remain separate
+steps. Private operations own resource limits, run receipts and current state.

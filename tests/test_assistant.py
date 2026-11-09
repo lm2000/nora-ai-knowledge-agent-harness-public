@@ -95,3 +95,12 @@ def test_inventory_override_keeps_supported_provider_settings(monkeypatch):
     assert config.models[0].model == "custom"
     assert config.models[0].token_name == "OLLAMA_TOKEN"
     assert config.models[0].relative_cost == 0.7
+
+
+def test_inventory_preserves_route_output_budget_and_default(monkeypatch):
+    monkeypatch.setenv(
+        "NORA_ASSISTANT_MODELS",
+        '[{"provider":"ollama","model":"glm-5.3-flash","base_url":"https://ollama.com","output_tokens":3600},{"provider":"ollama","model":"ordinary","base_url":"https://ollama.com"}]',
+    )
+    config = load_assistant_config(Settings())
+    assert [m.output_tokens for m in config.models] == [3600, 1800]

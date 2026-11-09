@@ -150,3 +150,12 @@ Validate source and diagrams before rollout. Back up state before a service
 change and check existing assistant continuity, new conversations and affected
 clients afterward. Source checks, deployment and owner acceptance are distinct.
 Representative quality and full clean-target recovery remain roadmap work.
+
+## Broad source collection and optional enrichment
+
+Collect approved local history and project text outside conversations, preserving
+original substantive text and provenance. Optional semantic summaries are
+separately identified derived documents. Cache completed model responses and
+reconcile uncertain requests before replay. Additions still assemble with the
+complete retained base and use one activation writer. Source collection does not
+change the embedding representation or conversational tool/model budgets.

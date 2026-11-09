@@ -101,6 +101,7 @@ assumptions in the loader.
 | `tools` | `true` | Declared tool support, stored as `supports_tools` |
 | `streaming` | `true` | Declared streaming support, stored as `supports_streaming` |
 | `context_length` | `16000` | Passed to Ollama as `num_ctx`; the Fireworks adapter does not use this field |
+| `output_tokens` | `1800` | Positive integer per route; passed as Ollama `num_predict` or Fireworks `max_tokens`. It does not change answer word caps or completion checks. |
 | `quality_tier` | `3` | Assumed quality tier; the convention is 1–5, with higher tiers stronger |
 | `relative_cost` | `1.0` | Relative cost assumption used in ranking, not a measured price |
 | `relative_latency` | `1.0` | Relative latency assumption used in ranking, not measured request time |

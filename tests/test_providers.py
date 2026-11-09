@@ -144,3 +144,22 @@ def test_fireworks_stream_interface_is_supported(monkeypatch):
     model = build_fireworks(spec, timeout=60)
     assert callable(getattr(model, "stream", None))
     assert callable(getattr(model, "astream", None))
+
+
+def test_output_budget_is_per_route_with_unchanged_default(monkeypatch):
+    monkeypatch.delenv("NORA_OLLAMA_TOKEN", raising=False)
+    monkeypatch.delenv("NORA_OLLAMA_TOKEN_FILE", raising=False)
+    route = ProviderSpec(
+        "ollama", "glm-5.3-flash", "https://ollama.com", "OLLAMA_TOKEN", output_tokens=3600
+    )
+    ordinary = ProviderSpec("ollama", "other", "http://localhost:11434", "OLLAMA_TOKEN")
+    assert build_ollama(route, timeout=180).num_predict == 3600
+    assert build_ollama(ordinary, timeout=180).num_predict == 1800
+
+
+@pytest.mark.parametrize("budget", [0, -1, True, "3600", 3.5])
+def test_output_budget_requires_positive_integer(budget):
+    with pytest.raises(ConfigurationError, match="output_tokens"):
+        ProviderSpec(
+            "ollama", "model", "http://localhost:11434", "OLLAMA_TOKEN", output_tokens=budget
+        )

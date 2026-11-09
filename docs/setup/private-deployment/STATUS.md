@@ -280,3 +280,63 @@ results with embedded coverage. The candidate stack remained healthy.
 This completes the initial candidate GCS cutover. The legacy baseline stack is
 separate and is not the selected candidate route. Future updates must publish
 an entire verified release before advancing the pointer.
+
+
+## Broad-source knowledge update — 2026-11-09
+
+The candidate GCS release `6e14e001fa46` is active with 47,293 documents and
+737,896 points. The retained corpus was preserved while adding project/assistant
+source material and seven linked derived summaries. Selected new and retained
+source search/full reads and a hash-matching summary read passed; all 68 preceding
+conversations remain. Both saved input batches returned unchanged on rerun.
+The follow-up import used snapshot restoration plus a delta, with exact point
+count and six retained/new payload/vector samples rather than another full scan.
+
+The additional follow-up model-answer smoke returned HTTP 503 and was not
+replayed; data activation and Retrieval success do not establish answer
+availability. The preceding main release had a passing bounded answer. Core
+service identities/configuration were preserved. Temporary compute is removed,
+the primary host is restored to its original size, and ordinary shared-BGE
+configuration is restored. This is a private corpus update, not a public
+package/site deployment or activation of a daily schedule.
+
+
+## Daily source refresh and storage headroom — 2026-11-09
+
+The owner-authorized daily Codex/project refresh heartbeat is ACTIVE at 09:00
+America/New_York; its first timed invocation is planned for November 10 and has
+not yet been observed. The older ten-document heartbeat remains paused. The
+existing boot disk was expanded online from 100 to 150 GiB with owner approval;
+about 52 GiB is free. All five core service identities/configurations are
+unchanged, no restart occurred, and Retrieval still serves 47,293 documents.
+A conservative free-space guard stops future runs before another backup/build
+when headroom is insufficient. No new source activation occurred in this setup.
+
+The additional answer 503 was diagnosed as rejection of an initial model
+length-stop response with no visible answer. Repair had not started. Diagnosis
+is complete; no model/application fix or inference replay was performed.
+
+
+## Route output budget and one answer check — 2026-11-09
+
+Coordination now runs `nis-coordination:output-budget-20261109-r2` /
+`sha256:7971184604c0c671afcbf24f6b141fecd17eca73756230b1e3f1f52f78a63d42`.
+The derivative patches only provider/inventory loading modules from the exact
+installed base and configures the existing GLM route at3,600 output tokens;
+other routes retain 1,800. Context, word, retrieval/model-call limits and the
+length-stop guard are unchanged. Existing overlays, mounts and other four
+core service identities/configuration remain. This is a scoped private image
+update, not a rebuild/publication of the complete source package.
+
+Fresh PostgreSQL/GCS backup and a current native corpus snapshot preceded
+rollout. Initial derivative file permissions prevented startup; explicit `0644`
+code permissions and a runtime-user offline check corrected that packaging
+issue before the live question. The failed temporary image was removed, and
+the previous healthy base remains available.
+
+One fresh `/ask` returned HTTP 200 in27.85 seconds with a 78-word answer within
+the requested 80 words; the answer is persisted identically in its new history.
+All 69 preceding conversations and the unchanged 47,293-document / 737,896-point
+corpus remain. No failed request was replayed or successful raw checkpoint
+inspected. This establishes that one bounded answer returns after the update;
+general reliability and the first timed daily refresh remain unestablished.

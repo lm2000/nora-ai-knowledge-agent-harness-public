@@ -59,7 +59,10 @@
   "excluded_documents": [
     "operations/README.md",
     "operations/google-cloud/nora-app-02.md",
-    "operations/knowledge-refresh/README.md"
+    "operations/knowledge-refresh/README.md",
+    "docs/superpowers/plans/2026-11-09-codex-project-rag-sources.md",
+    "docs/superpowers/specs/2026-11-09-codex-project-rag-sources-design.md",
+    "operations/knowledge-refresh/diagnostics/2026-11-09-answer-503.md"
   ],
   "supporting_files": [
     "LICENSE",
