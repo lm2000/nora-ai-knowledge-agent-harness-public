@@ -340,3 +340,30 @@ All 69 preceding conversations and the unchanged 47,293-document / 737,896-point
 corpus remain. No failed request was replayed or successful raw checkpoint
 inspected. This establishes that one bounded answer returns after the update;
 general reliability and the first timed daily refresh remain unestablished.
+
+## Successful summary additions — 2026-11-09
+
+Owner-authorized additive ingestion activated release `ca43c52b9dbe` with
+47,317 documents and 737,950 points: 24 saved derived summaries / 54 new chunks
+were added to the complete retained corpus. The previous release, collection,
+originals and conversation state remain retained. No new enrichment, source
+capture, provider route, permanent service or compute resource was introduced.
+
+Ordinary PostgreSQL/Qdrant backups and matching prepared/configuration copies
+preceded the update. A fresh-run worker bootstrap defect and a temporary build
+worker OOM were corrected in private operational adapters. Assembly now streams
+metadata and releases input rows before final validation; snapshot validation
+compares metadata sequentially. The existing shared BGE delta was reused, and a
+verified native snapshot was restored into a fresh collection before appending
+54 points. Exact retained metadata/vector layout, snapshot configuration,
+restored point IDs, final count and bounded old/new payload/vector samples
+passed. The focused adapter/snapshot/bootstrap/bulk suite passed 35 checks.
+
+Generation-conditional GCS activation completed. Retrieval served the new
+manifest/collection and exact counts; bounded checks read three new summaries
+and one retained source, searched new/retained content and returned one 96-word
+NIS answer. All 70 preceding conversations remain. A new summary was also read
+through the installed direct Retrieval connector. The four pre-existing
+uncertain job/call receipts have identical before/after hashes and were not
+replayed. Writer claims were released. These are bounded acceptance results;
+no all-payload roundtrip or general answer-quality assessment is claimed.

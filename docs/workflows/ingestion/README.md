@@ -187,3 +187,18 @@ processing output. Report unsupported media and changing sources explicitly.
 Provider failures may defer summaries while original text remains eligible for
 an additive release. Local adapter tests do not establish a live corpus update;
 use the same retained-base, backup, import and activation procedure above.
+
+### Archive and local staging retirement
+
+An installation may reclaim local copies from a successfully completed source
+run after streaming them to an immutable, generation-pinned archive. Before
+removing any copy, read the archive back and verify its complete inventory,
+file sizes and hashes, then confirm that the local inventory has not changed.
+Keep the manifest and verification receipt independently of the retired files.
+
+Limit this policy to explicitly selected run-local staging and copied backups.
+It does not remove active or retained prepared releases, collections, native
+service snapshots, conversation state or original source archives. Pending
+writers, uncertain uploads, changed inventories or failed verification stop
+retirement and retain local data for reconciliation. Storage retirement is a
+separate operation; it does not ingest, activate or verify generated summaries.
